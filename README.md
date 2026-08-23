@@ -203,54 +203,9 @@ $env:PORT="3000"
 node server.js
 ```
 
-## Project Structure
-
-```text
-.
-├── app/
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── server.js
-│   ├── public/
-│   └── src/
-├── data/
-├── docker-compose.yml
-├── DESIGN.md
-├── LICENSE
-├── README.md
-└── README.ru.md
-```
-
-## Architecture
-
-```text
-Browser
-   │
-   │ HTTP
-   ▼
-Express / Node.js
-   │
-   ├── REST API
-   ├── Health-check worker
-   ├── Speed test
-   └── SQLite
-         │
-         ▼
-   Persistent data
-```
-
-The frontend is built with plain HTML, CSS, and JavaScript and does not require a separate frontend build step.
-
-The backend uses:
-
-- Node.js
-- Express
-- SQLite
-- better-sqlite3
-
 ## Third-Party Assets
 
-Hemma may use service icons from third-party icon collections, including [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons) and [Simple Icons](https://simpleicons.org/).
+Hemma may use service icons from third-party icon collections, including [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons).
 
 Dashboard Icons is distributed under the **Apache License 2.0**. Its license and attribution requirements apply to the third-party assets and do not change the license of Hemma.
 
