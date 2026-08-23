@@ -6,6 +6,16 @@ It is designed primarily for trusted local networks and can be deployed with Doc
 
 **Documentation:** [English](README.md) · [Русский](README.ru.md)
 
+## Screenshots
+
+### Dashboard
+
+![Hemma dashboard](docs/desk.png)
+
+### New element
+
+![Hemma new element](docs/new_element.png)
+
 ## Features
 
 - Local services and bookmarks in a customizable dashboard
