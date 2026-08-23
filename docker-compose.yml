@@ -1,0 +1,12 @@
+services:
+  portal:
+    build: ./app
+    container_name: home-portal
+    restart: unless-stopped
+    ports:
+      - "8000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/app.db

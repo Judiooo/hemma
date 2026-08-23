@@ -1,0 +1,1873 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&family=Ubuntu:wght@400;500;700&display=swap');
+:root {
+  --bg-image: linear-gradient(135deg, #16323e 0%, #1f4f4a 45%, #2f7d6b 75%, #7fc9a3 100%);
+  --surface: #ffffff;
+  --text: #1a1d23;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  /* Ink for the percent scale under the transparency sliders. Deliberately not
+     --text-muted: the marks paint at .5/.85 alpha, and a grey that is already
+     muted washes out to nothing once halved. Full-strength ink per theme, faded
+     by the alpha, lands in the same place --text-muted was aiming for (v31). */
+  --range-tick-ink: #1a1d23;
+  --accent: #4f6bfe;
+  --accent-hover: #3d56e0;
+  --danger: #e0463f;
+  --online: #2fb96b;
+  --offline: #e0463f;
+  /* A bucket in the availability bar where some checks passed and some failed.
+     It has to read as "neither" between --online and --offline, so amber rather
+     than a blend of the two, which would land on a muddy olive (v32). */
+  --partial: #e8a33d;
+  --unknown: #c7cbd1;
+  --radius: 16px;
+  --card-w: 104px;
+  --card-gap: 14px;
+  --tile-size: 64px;
+  --tile-radius: 18px;
+  /* Category-block geometry, medium by default; see [data-block-size] below. */
+  --block-min-w: 190px;
+  --block-max-w: 280px;
+  --block-pad: 11px 13px 13px;
+  --block-radius: 22px;
+  --block-gap: 7px;
+  --block-title-size: 13px;
+  --block-row-gap: 3px;
+  --block-row-pad: 5px 7px;
+  --block-row-radius: 12px;
+  --block-icon-size: 26px;
+  --block-icon-radius: 8px;
+  --block-name-size: 13px;
+  --block-dot-size: 9px;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --columns: auto-fill;
+  --card-backdrop: rgba(255,255,255,.92);
+  --cards-area-width: 100%;
+  --icon-background: #ffffff;
+  /* Fill of the frosted surfaces, split into a tint (fixed per theme) and an
+     alpha (written by JS from the four Настройки → Прозрачность sliders). The
+     borders, blur and shadows stay put, so a fully transparent fill still
+     leaves the surface readable as a panel. All four groups share one tint per
+     theme, so equal slider values render as one identical colour (v27; blocks
+     used to be white-tinted in both themes and looked lighter than the rest). */
+  --block-tint: 20,23,29;
+  --block-alpha: .10;
+  --widget-tint: 20,23,29;
+  --widget-alpha: .40;
+  --search-tint: 20,23,29;
+  --search-alpha: .40;
+  --button-tint: 20,23,29;
+  --button-alpha: .40;
+
+  /* Text and icons *on* a frosted surface (v30). The sliders above drive the
+     fill and nothing else, so at 100% transparency the fill is gone and the
+     glyphs sit straight on the wallpaper. Dark theme is near-white ink, the
+     light theme below mirrors it in near-black. Neither is pure #fff or #000:
+     full-strength ink on a tinted panel reads as glare, and these values match
+     the --text of each theme, so a label on glass and a label in a dialog are
+     the same colour.
+
+     Neither theme paints a halo or a stroke any more (v31). A dark glow behind
+     white glyphs reads as depth in isolation, but on a dark frosted panel —
+     where it spends nearly all of its time — it is a smudge around every label,
+     and the 2px stroke turned 12px card names into outlined stickers. That was
+     already the verdict for the light theme; it applies just as well to the
+     dark one.
+
+     The tokens stay (inert) rather than being deleted along with their
+     declarations, because the trade-off they exist for is real: at the top of
+     the transparency sliders the fill is gone and the glyphs stand on the
+     wallpaper unaided, so a wallpaper that matches the ink wants the other
+     theme or a slider below 100%. If that ever needs a halo again it is these
+     two lines, not thirty selectors. */
+  --glass-fg: #f1f2f4;
+  --glass-fg-soft: rgba(241,242,244,.80);
+  --glass-fg-faint: rgba(241,242,244,.60);
+  --glass-halo: none;
+  --glass-halo-soft: none;
+  --glass-stroke-color: transparent;
+  --glass-stroke-width: 0;
+}
+[data-theme="dark"] { --surface: #23262d; --text: #f1f2f4; --text-muted: #a6adb8; --border: #363a44; --range-tick-ink: #eaeef4; }
+[data-theme="light"] { --surface: #ffffff; --text: #1a1d23; --text-muted: #6b7280; --border: #dfe3e8; }
+/* The light theme tints every frosted surface white instead of near-black.
+   Alphas are deliberately not touched here — one slider has to mean the same
+   thing in either theme. */
+[data-theme="light"] { --block-tint: 255,255,255; --widget-tint: 255,255,255; --search-tint: 255,255,255; --button-tint: 255,255,255; }
+/* The mirror image of the foreground tokens in :root: near-black ink where the
+   dark theme uses near-white. Everything painted on a frosted surface reads
+   these, so "text in the light theme" is one decision in one place rather than a
+   per-component override (v30). The halo and stroke tokens are inert in :root
+   for both themes now, so there is nothing left for this block to neutralise
+   (v31) — see the note there. */
+[data-theme="light"] {
+  --glass-fg: #20242b;
+  --glass-fg-soft: rgba(32,36,43,.80);
+  --glass-fg-faint: rgba(32,36,43,.60);
+}
+
+/* Kept as a no-op switch rather than deleted with the halo (v31): the selectors
+   below are exactly the set that sits on a frosted surface, so they are where a
+   stroke would have to go if the wallpaper-vs-ink problem ever needs one again.
+   Both tokens are inert in every theme, so nothing is painted today. */
+.tbtn,
+.widget,
+.card-name,
+.category-block h3,
+.block-title,
+.empty-state,
+.sticky-note,
+.speed-widget,
+.topbar #searchInput,
+.topbar #searchInput::placeholder {
+  -webkit-text-stroke: var(--glass-stroke-width) var(--glass-stroke-color);
+  paint-order: stroke fill;
+}
+.speed-field select { -webkit-text-stroke: 0; }
+/* Borders only — the label colour comes from --glass-fg either way, so it does
+   not need restating per theme (v31). */
+[data-theme="light"] .tbtn { border: 1px solid rgba(0,0,0,.08); }
+[data-theme="dark"] .tbtn { border: 1px solid rgba(255,255,255,.1); }
+[data-theme="light"] .search-wrap { background: rgba(255,255,255,.96); }
+[data-theme="dark"] .search-wrap { background: rgba(30,34,41,.92); }
+[data-theme="dark"] #searchInput { color: #f1f2f4; }
+[data-theme="dark"] #searchInput::placeholder { color: #8e96a3; }
+[data-theme="dark"] .search-clear { background: #3a404b; color: #e6e9ee; }
+[data-theme="dark"] .search-clear:hover { background: #464d59; color: #f1f2f4; }
+[data-theme="dark"] #searchEngine { background: #3a404b; color: #edf0f5; }
+[data-theme="dark"] #searchEngine:hover { background: #464d59; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100vh; font-family: var(--font-family); color: var(--glass-fg); }
+/* --bg-color is the flat fill picked from the wallpaper palette (v27). It sits
+   under the image, so it only shows when JS also sets --bg-image to none. */
+body { background-image: var(--bg-image); background-size: cover; background-position: center center; background-attachment: fixed; background-repeat: no-repeat; background-color: var(--bg-color, #10151b); }
+.bg-overlay { position: fixed; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.12) 30%, rgba(0,0,0,.35) 100%); pointer-events: none; z-index: 0; }
+[data-font="serif"] { --font-family: "Georgia", "Times New Roman", serif; }
+[data-font="mono"] { --font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+[data-font="rounded"] { --font-family: "Avenir Next", "Segoe UI Rounded", sans-serif; }
+[data-card-size="small"] { --card-w: 92px; --tile-size: 52px; --tile-radius: 14px; }
+[data-card-size="medium"] { --card-w: 104px; --tile-size: 64px; --tile-radius: 18px; }
+[data-card-size="large"] { --card-w: 128px; --tile-size: 80px; --tile-radius: 22px; }
+/* Category blocks scale independently of the cards (v27). Every measurement
+   inside a block derives from these five variables, so a larger block grows its
+   rows, icons, dots and type in proportion instead of just gaining padding. */
+[data-block-size="small"] {
+  --block-min-w: 160px; --block-max-w: 230px; --block-pad: 9px 11px 11px;
+  --block-radius: 18px; --block-gap: 5px; --block-title-size: 12px; --block-row-gap: 2px;
+  --block-row-pad: 4px 6px; --block-row-radius: 10px; --block-icon-size: 21px;
+  --block-icon-radius: 7px; --block-name-size: 12px; --block-dot-size: 8px;
+}
+[data-block-size="medium"] {
+  --block-min-w: 190px; --block-max-w: 280px; --block-pad: 11px 13px 13px;
+  --block-radius: 22px; --block-gap: 7px; --block-title-size: 13px; --block-row-gap: 3px;
+  --block-row-pad: 5px 7px; --block-row-radius: 12px; --block-icon-size: 26px;
+  --block-icon-radius: 8px; --block-name-size: 13px; --block-dot-size: 9px;
+}
+[data-block-size="large"] {
+  --block-min-w: 230px; --block-max-w: 340px; --block-pad: 14px 16px 16px;
+  --block-radius: 26px; --block-gap: 10px; --block-title-size: 15px; --block-row-gap: 5px;
+  --block-row-pad: 7px 9px; --block-row-radius: 14px; --block-icon-size: 34px;
+  --block-icon-radius: 11px; --block-name-size: 15px; --block-dot-size: 11px;
+}
+[data-card-backdrop="false"] .card { --card-backdrop: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; }
+[data-card-backdrop-opacity="low"] { --card-backdrop: rgba(255,255,255,.08); }
+[data-card-backdrop-opacity="medium"] { --card-backdrop: rgba(255,255,255,.14); }
+[data-card-backdrop-opacity="high"] { --card-backdrop: rgba(255,255,255,.21); }
+[data-card-backdrop-color="white"] { --card-backdrop: rgba(255,255,255,.92); }
+[data-card-backdrop-color="gray"] { --card-backdrop: rgba(128,128,128,.82); }
+[data-card-backdrop-color="black"] { --card-backdrop: rgba(0,0,0,.76); }
+[data-card-backdrop-color="translucent"][data-card-backdrop-opacity="low"] { --card-backdrop: rgba(255,255,255,.08); }
+[data-card-backdrop-color="translucent"][data-card-backdrop-opacity="medium"] { --card-backdrop: rgba(255,255,255,.14); }
+[data-card-backdrop-color="translucent"][data-card-backdrop-opacity="high"] { --card-backdrop: rgba(255,255,255,.22); }
+a { color: inherit; }
+button, input, select { font: inherit; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+.toolbar { position: fixed; top: 0; right: 0; z-index: 30; display: flex; gap: 16px; padding: 24px; }
+.tbtn { display: flex; align-items: center; justify-content: center; gap: 6px; border: none; background: rgba(var(--button-tint), var(--button-alpha)); backdrop-filter: blur(10px); color: var(--glass-fg); text-shadow: var(--glass-halo); border-radius: 999px; padding: 10px 14px; font-size: 13px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.15); transition: background .15s ease, transform .12s ease; }
+/* Hover lifts the fill a notch above whatever the slider is set to. An alpha
+   over 1 is clamped by the browser, so the top of the range needs no guard. */
+.tbtn:hover { background: rgba(var(--button-tint), calc(var(--button-alpha) + .14)); }
+.tbtn:not(.tbtn-primary) { padding: 10px; }
+.tbtn-icon { width: 44px; height: 44px; padding: 9px !important; }
+.tbtn-icon:hover { transform: translateY(-1px); }
+/* The icons ship as near-black (#1f1f1f) artwork, which is already the light
+   theme's ink, so light leaves them alone and dark inverts to #e0e0e0 — a
+   near-white that matches the ink rule without landing on pure #fff. Neither
+   filter carries a drop-shadow any more (v31): the glow around the line art was
+   the same effect that was removed from the text, and `invert(1) none` is not a
+   valid filter list, so the halo could not simply be tokenised away here. */
+.toolbar-icon { display: block; width: 24px; height: 24px; flex: 0 0 24px; object-fit: contain; }
+[data-theme="dark"] .toolbar-icon { filter: invert(1); }
+.tbtn svg { flex-shrink: 0; }
+.tbtn-primary { background: var(--accent); }
+.tbtn-primary:hover { background: var(--accent-hover); }
+
+.app { position: relative; z-index: 1; width: 100%; max-width: 1800px; margin: 0 auto; padding: 20px 24px 60px; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 48px 0 40px; text-align: center; }
+.brand { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 28px; font-weight: 700; font-size: 22px; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
+.brand[hidden] { display: none; }
+.brand-icon { line-height: 1; }
+
+.search-wrap { width: 100%; max-width: 480px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.94); border-radius: 999px; padding: 0 8px 0 14px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+/* Follows the ink rule instead of sitting on a fixed mid-grey: the field is a
+   light window in the light theme and a dark one in the dark theme, so a single
+   grey could only ever be a compromise on both. `-soft` keeps the magnifier a
+   step behind the query text without breaking the rule (v31). */
+.search-icon { color: var(--glass-fg-soft); flex-shrink: 0; }
+#searchInput { flex: 1; min-width: 0; border: none; background: transparent; outline: none; font-size: 14px; color: #1a1d23; padding: 0; height: 100%; }
+#searchInput::placeholder { color: #9aa1ac; }
+.search-clear { flex: 0 0 auto; border: 0; width: 22px; height: 22px; border-radius: 50%; background: #eef0f4; color: #6b7280; font-size: 16px; line-height: 1; cursor: pointer; }
+.search-clear:hover { background: #e0e4ea; color: #1a1d23; }
+.search-engine-wrap { position: relative; flex: 0 0 auto; display: flex; align-items: center; }
+.search-engine-wrap::after { content: ""; position: absolute; right: 8px; top: 50%; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-70%) rotate(45deg); opacity: .55; pointer-events: none; }
+#searchEngine { appearance: none; border: 0; outline: none; background: #eef0f4; color: #5f6670; border-radius: 999px; min-width: 105px; padding: 8px 27px 8px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+#searchEngine:hover { background: #e4e7ed; }
+
+.widgets { display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 10px; max-width: 100%; }
+.widgets[hidden] { display: none; }
+.widget { min-width: 145px; padding: 8px 13px; border-radius: 16px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(12px); box-shadow: 0 8px 25px rgba(0,0,0,.16); color: var(--glass-fg); text-shadow: var(--glass-halo); }
+.widget.wgt-style-minimal { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; padding: 8px 10px; }
+.widget.wgt-style-glass { background: rgba(255,255,255,.11); border-color: rgba(255,255,255,.3); }
+/* Secondary text dims via its own colour, never via `opacity`: opacity fades the
+   halo along with the glyph, which is exactly the "the text goes transparent too"
+   the sliders were accused of (v30). Hover and disabled states below still use
+   opacity — those are transient, and losing the halo for a moment is fine. */
+.widget .widget-label { font-size: 10px; color: var(--glass-fg-soft); text-transform: uppercase; letter-spacing: .08em; }
+.widget .widget-value { font-weight: 700; margin-top: 2px; line-height: 1.15; }
+.date-widget .widget-value { font-size: 14px; }
+.time-widget .widget-value { font-size: 23px; letter-spacing: .02em; }
+.weather-widget { min-width: 230px; }
+.weather-main { display: flex; align-items: center; gap: 8px; }
+.weather-icon { font-size: 20px; line-height: 1; }
+.weather-temp { font-size: 21px; font-weight: 700; }
+.weather-meta { font-size: 11px; opacity: .78; margin-top: 4px; }
+
+.section { width: var(--cards-area-width, 100%); margin: 0 auto 36px; }
+.category-block { margin-bottom: 26px; }
+/* The card rows are centred, so the category caption above them is too —
+   a left-flushed caption would sit far away from its own cards. */
+.category-block h3 { font-size: 12px; color: var(--glass-fg-soft); font-weight: 600; margin: 0 0 12px; text-align: center; text-shadow: var(--glass-halo-soft); }
+/* A wrapping flex row, not grid tracks: with `repeat(auto-fill, …)` the empty
+   trailing tracks kept the cards pinned to the left edge, so a half-filled row
+   never looked centred. Flex only lays out the cards that exist. */
+.grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px var(--card-gap); margin: 0 auto; }
+.grid > .card { flex: 0 0 var(--card-w); }
+/* A fixed column count caps the row width instead of stretching it across the
+   whole card area, so the block as a whole stays centred. */
+[data-columns="3"] #itemsContainer .grid { max-width: calc(3 * var(--card-w) + 2 * var(--card-gap)); }
+[data-columns="4"] #itemsContainer .grid { max-width: calc(4 * var(--card-w) + 3 * var(--card-gap)); }
+[data-columns="5"] #itemsContainer .grid { max-width: calc(5 * var(--card-w) + 4 * var(--card-gap)); }
+[data-columns="6"] #itemsContainer .grid { max-width: calc(6 * var(--card-w) + 5 * var(--card-gap)); }
+[data-columns="7"] #itemsContainer .grid { max-width: calc(7 * var(--card-w) + 6 * var(--card-gap)); }
+[data-columns="8"] #itemsContainer .grid { max-width: calc(8 * var(--card-w) + 7 * var(--card-gap)); }
+.card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; cursor: pointer; text-decoration: none; user-select: none; padding: 10px 8px 9px; border-radius: 16px; background: var(--card-backdrop); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(7px); box-shadow: 0 7px 20px rgba(0,0,0,.12); }
+.card.dragging { opacity: .35; }
+
+/* Pointer-driven drag & drop (v29). The tile under the cursor is a floating copy
+   of the card; the original keeps its place in the list, dimmed, and is what the
+   insertion logic shuffles around — so the layout previews the result live.
+   The copy must not take pointer events: the element under the cursor is how the
+   drop target is found. */
+.drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 300;
+  margin: 0;
+  pointer-events: none;
+  opacity: .95;
+  box-sizing: border-box;
+  transform: translate3d(-9999px, -9999px, 0);
+  will-change: transform;
+  box-shadow: 0 18px 42px rgba(0,0,0,.4);
+}
+/* A block row is normally transparent because the block behind it is the panel;
+   in flight it carries its own so the row stays readable over the wallpaper. */
+.block-item.drag-ghost {
+  padding: var(--block-row-pad);
+  border-radius: var(--block-row-radius);
+  background: rgba(var(--block-tint), .92);
+  border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+body.dragging-item { cursor: grabbing; touch-action: none; }
+body.dragging-item .card { cursor: grabbing; }
+/* The browser's own image drag would otherwise start instead of ours. */
+.card img { -webkit-user-drag: none; user-drag: none; }
+
+/* Cross-container drag & drop (v27). While a card is in flight every container
+   that accepts it is outlined and given a floor height, so an empty favorites
+   shelf or an unused category is still a visible, hittable target. */
+body.dragging-item [data-drop-mode] { min-height: 44px; border-radius: 14px; outline: 1px dashed rgba(255,255,255,.3); outline-offset: 4px; }
+body.dragging-item [data-drop-mode].drop-over { outline: 2px dashed var(--accent); background: rgba(255,255,255,.07); }
+[data-theme="light"] body.dragging-item [data-drop-mode] { outline-color: rgba(0,0,0,.24); }
+[data-theme="light"] body.dragging-item [data-drop-mode].drop-over { background: rgba(0,0,0,.05); }
+/* Ghost block for a category that currently has no rows: it exists only for the
+   duration of a drag, so it is dimmed to read as a target rather than content. */
+.block-placeholder { opacity: .7; }
+.block-placeholder .block-title { color: var(--text-muted); }
+.card-icon { position: relative; width: var(--tile-size); height: var(--tile-size); border-radius: var(--tile-radius); display: flex; align-items: center; justify-content: center; font-size: calc(var(--tile-size) * .46); font-weight: 700; color: #fff; overflow: visible; box-shadow: 0 6px 16px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.15); transition: transform .15s ease, box-shadow .15s ease; }
+.card:hover .card-icon { transform: translateY(-3px) scale(1.04); box-shadow: 0 10px 22px rgba(0,0,0,.32); }
+.card-icon img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; background: var(--icon-background, #fff); border-radius: inherit; padding: 5px; }
+.card-icon img.icon-fallback { object-fit: contain; padding: 0; }
+.card-name { font-size: 12.5px; font-weight: 500; color: var(--glass-fg); text-shadow: var(--glass-halo); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.status-badge { position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid rgba(255,255,255,.9); color: transparent; background: var(--unknown); box-shadow: 0 1px 3px rgba(0,0,0,.35); font-size: 0; z-index: 2; }
+.status-badge.online { background: var(--online); }
+.status-badge.offline { background: var(--offline); }
+.status-badge.checking { background: #f0ad2c; animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.card-menu-btn { position: absolute; top: -6px; left: -6px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); color: #f1f2f4; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .12s ease; z-index: 3; }
+.card:hover .card-menu-btn, .card:focus-within .card-menu-btn { opacity: 1; }
+.card-menu-btn:hover { background: rgba(0,0,0,.65); }
+.empty-state { text-align: center; color: var(--glass-fg-soft); padding: 60px 20px; text-shadow: var(--glass-halo-soft); }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.48); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(3px); }
+.modal-overlay[hidden] { display: none; }
+/* The confirm dialog is always raised over whatever asked for it — deleting a
+   category is triggered from inside the settings modal, and DOM order alone put
+   the question behind the dialog that asked it (v27). Above the context menus
+   (200) and the widget popover (210) for the same reason. */
+#confirmModal { z-index: 320; }
+.modal { background: var(--surface); color: var(--text); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.modal-small { max-width: 340px; }
+.modal-item { max-width: 520px; }
+.modal h3 { margin: 0; }
+.modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.modal-close { width: 34px; height: 34px; border: 0; border-radius: 10px; background: transparent; color: var(--text-muted); font-size: 26px; line-height: 1; cursor: pointer; }
+.modal-close:hover { background: rgba(127,127,127,.12); color: var(--text); }
+.modal-settings { max-width: 1080px; width: min(1080px, calc(100vw - 28px)); height: auto; max-height: calc(100vh - 28px); overflow: hidden; padding: 18px; display: flex; flex-direction: column; }
+.settings-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; padding: 1px 2px 2px 1px; }
+.settings-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.settings-col fieldset { min-width: 0; }
+.checks-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 10px; }
+.field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.field-head output { font-variant-numeric: tabular-nums; color: var(--text); }
+.settings-sublabel { font-size: 11px; color: var(--text-muted); margin: 0 0 5px; }
+.settings-sublabel + .settings-btn-row { margin-bottom: 8px; }
+.settings-btn-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-btn-row:last-child { margin-bottom: 0; }
+.btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: 10px; font-size: 14px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.field input, .field select, .field-row input[type="text"], .field-row select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 9px; font-size: 13px; color: var(--text); background: var(--surface); min-width: 0; }
+.field input[type="color"] { width: 100%; min-height: 38px; padding: 4px; cursor: pointer; }
+.field-row { display: flex; gap: 12px; margin-bottom: 10px; font-size: 13px; color: var(--text); align-items: center; }
+.field-row > * { min-width: 0; }
+.field-row.compact-row { margin-bottom: 0; }
+/* Field label with an inline action button (e.g. "Иконка" + "Взять с сайта"). */
+.field-action-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.field-inline { display: flex; align-items: center; gap: 7px; font-size: 13px; margin-bottom: 10px; color: var(--text); }
+.field-inline input { accent-color: var(--accent); }
+/* Set by the JS that greys out a control whose master switch is off (the weather
+   city, the rotation interval): the input is disabled anyway, this dims its label
+   with it so the whole row reads as inactive. */
+.field.disabled { opacity: .5; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.hint { font-size: 11px; color: var(--text-muted); margin: -2px 0 8px; line-height: 1.4; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.settings-footer { padding-top: 10px; flex: 0 0 auto; }
+.settings-body fieldset { border: 1px solid var(--border); border-radius: 11px; margin: 0; padding: 9px 11px; }
+.settings-body legend { font-size: 11px; color: var(--text-muted); text-transform: uppercase; padding: 0 5px; letter-spacing: .04em; }
+.settings-compact .field { margin-bottom: 7px; gap: 3px; }
+.settings-compact .field-inline { margin-bottom: 7px; }
+.settings-compact .hint { margin-bottom: 6px; }
+.settings-compact > :last-child { margin-bottom: 0; }
+.settings-compact .field input,
+.settings-compact .field select { padding: 7px 8px; }
+.settings-compact .field input[type="range"] { width: 100%; padding: 0; margin: 2px 0 0; accent-color: var(--accent); }
+.settings-compact .field input[type="file"] { padding: 5px 7px; font-size: 12px; }
+.widget-settings-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.widget-setting-card { border: 1px solid var(--border); border-radius: 9px; padding: 8px; min-width: 0; }
+.widget-setting-card .field { margin-bottom: 6px; gap: 3px; }
+.widget-setting-card .field-inline { margin-bottom: 6px; }
+.widget-setting-card .field:last-child, .widget-setting-card .field-inline:last-child { margin-bottom: 0; }
+.category-manager { max-height: 94px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px; margin-bottom: 8px; }
+.category-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 0; font-size: 13px; color: var(--text); }
+.category-row button { border: none; background: none; color: var(--danger); cursor: pointer; font-size: 12px; }
+/* The name is editable in place; the input only shows its frame on hover/focus
+   so the list still reads as a list. */
+.category-row .category-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.category-row .category-name:hover { border-color: var(--border); }
+.category-row .category-name:focus { border-color: var(--border); background: rgba(127,127,127,.10); outline: none; }
+.file-btn { display: inline-flex; align-items: center; }
+
+
+.icon-picker-block { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin: -2px 0 12px; background: rgba(127,127,127,.05); }
+.icon-picker-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
+.field-label { font-size:12px; color:var(--text-muted); }
+.icon-picker-search-row { display:grid; grid-template-columns:1fr auto auto; gap:7px; align-items:center; }
+.icon-picker-search-row input { border:1px solid var(--border); border-radius:8px; padding:8px 9px; font-size:13px; color:var(--text); background:var(--surface); min-width:0; }
+.icon-format-switch { display:inline-flex; gap:2px; padding:2px; border:1px solid var(--border); border-radius:8px; background:var(--surface); }
+.icon-format-option { border:0; background:transparent; color:var(--text-muted); font-size:11px; font-weight:600; padding:5px 8px; border-radius:6px; cursor:pointer; }
+.icon-format-option:hover { color:var(--text); background:rgba(127,127,127,.14); }
+.icon-format-option.active { background:var(--accent); color:#fff; }
+.btn-small { padding:7px 10px; font-size:12px; }
+.icon-search-results { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:7px; margin-top:8px; max-height:180px; overflow:auto; }
+.icon-search-result { border:1px solid var(--border); border-radius:9px; background:var(--surface); padding:7px 5px; cursor:pointer; color:var(--text); min-width:0; }
+.icon-search-result:hover { border-color:var(--accent); background:rgba(127,127,127,.08); }
+.icon-search-result img { width:42px; height:42px; display:block; object-fit:contain; margin:0 auto 4px; }
+.icon-search-result span { display:block; font-size:10px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width:640px) {
+  .icon-search-results { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .icon-picker-search-row { grid-template-columns:1fr auto; }
+  .icon-picker-search-row input { grid-area:1 / 1; }
+  .icon-picker-search-row .btn-small { grid-area:1 / 2; }
+  .icon-format-switch { grid-area:2 / 1 / 3 / -1; justify-content:space-between; }
+}
+
+.context-menu { position: fixed; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.25); z-index: 200; overflow: hidden; min-width: 190px; }
+.context-menu[hidden] { display: none; }
+.context-menu button { display: block; width: 100%; text-align: left; padding: 10px 14px; border: none; background: none; color: var(--text); font-size: 14px; cursor: pointer; }
+.context-menu button:hover { background: rgba(127,127,127,.12); }
+.context-menu button.danger { color: var(--danger); }
+
+.widget-popover { position: fixed; z-index: 210; width: 300px; max-width: calc(100vw - 20px); max-height: calc(100vh - 20px); overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.32); }
+.widget-popover[hidden] { display: none; }
+.widget-popover-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--text); position: sticky; top: 0; background: var(--surface); }
+.widget-popover-body { padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+.widget-popover-body .field { margin: 0; gap: 3px; }
+.widget-popover-body .field-inline { margin: 0; }
+.widget-popover-body .field-row { display: flex; gap: 8px; }
+.widget-popover-body .field-row .field { flex: 1; min-width: 0; }
+.widget-popover-body .hint { font-size: 11px; color: var(--text-muted); margin: 0; }
+
+@media (max-width: 1000px) {
+  /* Below three columns the fixed column split would leave a hole, so the
+     fieldsets flow as grid items in document order instead. */
+  .settings-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settings-col { display: contents; }
+}
+@media (max-width: 760px) {
+  .settings-body { grid-template-columns: 1fr; }
+  .widget-settings-grid { grid-template-columns: 1fr; }
+  .modal-settings { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
+}
+@media (max-width: 640px) {
+  .toolbar { top: 10px; right: 10px; }
+  .tbtn-primary span { display: none; }
+  .hero { padding: 36px 0 28px; gap: 16px; }
+  :root { --card-w: 88px; }
+  .search-wrap { padding-left: 14px; }
+  #searchEngine { min-width: 88px; }
+  .widgets { max-width: min(70vw, 170px); }
+  .widget { flex: none; }
+  .modal-overlay { padding: 10px; }
+  .modal { padding: 18px; }
+}
+
+/* v6 layout controls */
+
+.tbtn-icon { width: 44px; height: 44px; padding: 0 !important; justify-content: center; border-radius: 999px; }
+.plus-icon { font-size: 27px; line-height: 1; font-weight: 300; }
+.grid-icon { font-size: 22px; line-height: 1; }
+[data-toolbar-direction="column"] .toolbar { flex-direction: column; }
+[data-toolbar-position="top-left"] .toolbar { top: 0; left: 0; right: auto; bottom: auto; }
+[data-toolbar-position="top-right"] .toolbar { top: 0; right: 0; left: auto; bottom: auto; }
+[data-toolbar-position="bottom-left"] .toolbar { top: auto; right: auto; left: 0; bottom: 0; }
+[data-toolbar-position="bottom-right"] .toolbar { top: auto; right: 0; left: auto; bottom: 0; }
+[data-toolbar-position="bottom-center"] .toolbar { top: auto; right: auto; left: 50%; bottom: 0; transform: translateX(-50%); }
+
+.search-wrap { width: min(var(--search-width, 480px), calc(100vw - 32px)); min-height: var(--search-height, 38px); height: var(--search-height, 38px); }
+[data-search-engine-visible="false"] .search-engine-wrap { display: none; }
+[data-search-engine-style="compact"] #searchEngine { min-width: 82px; padding: 6px 22px 6px 9px; border-radius: 8px; }
+[data-search-engine-style="text"] #searchEngine { min-width: auto; background: transparent; padding: 6px 20px 6px 4px; border-radius: 0; }
+
+ .widgets { position: fixed; top: 18px; left: 18px; z-index: 15; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: auto; max-width: min(92vw, 190px); }
+.widgets[hidden] { display: none; }
+.widget { font-size: 12px; margin: 0; width: 100%; min-width: 0; max-width: none; flex: none; box-sizing: border-box; user-select: none; }
+.widget .widget-value { font-size: var(--widget-font-size, 15px); }
+.date-widget .widget-value, .time-widget .widget-value, .weather-temp { font-size: var(--widget-font-size, 15px); }
+.weather-widget { width: 100%; min-width: 0; }
+/* Wallpaper album. The tiles are a third wider than the settings-column version
+   they replaced (v27), so auto-fill decides the column count from the dialog's
+   own width instead of a hard-coded three. */
+.background-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 9px; max-height: min(44vh, 360px); overflow-y: auto; margin-bottom: 10px; padding-right: 2px; }
+.background-thumb { position: relative; display: block; width: 100%; min-width: 0; padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; background: #ddd; cursor: pointer; }
+.background-thumb-media { display: block; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #ddd; }
+.background-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The caption is only a file name, unreadable at tile width; it stays in the DOM
+   as the button's accessible name and is shown by the tile's title tooltip. */
+.background-thumb-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.background-thumb.active { border-color: var(--accent); }
+
+/* Rotation membership rides in the tile's corner: clicking the tile body still
+   applies the wallpaper, the corner toggle only adds/removes it from the
+   carousel. It is a <span>, not a nested <button>, because a button inside a
+   button is invalid HTML — the click handler lives on the tile. */
+.background-thumb-pick {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(255,255,255,.55);
+  color: #f1f2f4;
+  font-size: 12px;
+  line-height: 1;
+  backdrop-filter: blur(3px);
+}
+.background-thumb-pick.on { background: var(--accent); border-color: var(--accent); }
+.background-thumb-pick:not(.on)::after { content: ""; }
+/* Hidden entirely while rotation is off — there is nothing to opt into. */
+.background-gallery:not(.picking) .background-thumb-pick { display: none; }
+
+/* Фон dialog: sections stacked in a single scrolling body, so the album can use
+   the full dialog width. */
+.modal-wallpaper { max-width: 720px; width: min(720px, calc(100vw - 28px)); max-height: calc(100vh - 28px); padding: 18px; display: flex; flex-direction: column; overflow: hidden; }
+.wallpaper-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 1px 2px 2px 1px; }
+.wallpaper-section { border: 1px solid var(--border); border-radius: 11px; padding: 11px 13px 13px; }
+.wallpaper-section h4 { margin: 0 0 7px; font-size: 13px; font-weight: 600; color: var(--text); }
+.wallpaper-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.wallpaper-section-head h4 { margin-bottom: 7px; }
+.wallpaper-section-head .hint { margin: 0 0 7px; }
+.wallpaper-section .settings-sublabel { margin-top: -3px; }
+.wallpaper-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* A <label> pretending to be a button needs the button's own centring back. */
+.wallpaper-actions label.btn { display: inline-flex; align-items: center; cursor: pointer; }
+.wallpaper-section .field-color { margin-bottom: 0; margin-top: 10px; }
+.wallpaper-section .pair-row { margin-bottom: 8px; }
+.wallpaper-section .pair-row .field { flex: 1 1 0; margin-bottom: 0; }
+.wallpaper-section .field-inline:first-of-type { margin-bottom: 10px; }
+
+/* Fill colours. Same tile language as the album, just square and small. */
+.color-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 7px; }
+.color-swatch { width: 100%; aspect-ratio: 1; padding: 0; border: 2px solid transparent; border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(127,127,127,.28); cursor: pointer; }
+.color-swatch.active { border-color: var(--accent); }
+
+@media (max-width: 640px) { .section { width: 100%; } .background-gallery { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); } .widget { max-width: calc(100vw - 20px); } }
+
+/* Search engine custom dropdown */
+.search-engine-wrap { position: relative; flex: 0 0 auto; display: flex; align-items: center; }
+.search-engine-wrap::after { content: ""; position: absolute; right: 8px; top: 50%; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-70%) rotate(45deg); opacity: .55; pointer-events: none; z-index: 2; }
+#searchEngine { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.search-engine-button { appearance: none; border: 0; outline: none; background: #eef0f4; color: #5f6670; border-radius: 999px; min-width: 0; padding: 8px 22px 8px 10px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.search-engine-button:hover { background: #e4e7ed; }
+.search-engine-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 150px; padding: 5px; border: 1px solid rgba(127,127,127,.24); border-radius: 14px; background: var(--surface); box-shadow: 0 14px 36px rgba(0,0,0,.28); overflow: hidden; z-index: 80; }
+.search-engine-menu[hidden] { display: none; }
+.search-engine-option { display: block; width: 100%; border: 0; border-radius: 9px; padding: 9px 11px; text-align: left; background: transparent; color: var(--text); font-size: 12px; cursor: pointer; }
+.search-engine-option:hover, .search-engine-option.active { background: rgba(79,107,254,.12); color: var(--text); }
+[data-theme="dark"] .search-engine-button { background: #3a404b; color: #edf0f5; }
+[data-theme="dark"] .search-engine-button:hover { background: #464d59; }
+
+/* Stitch reference alignment — preserves Home Portal functionality */
+.search-wrap {
+  padding: 0 6px 0 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+[data-theme="dark"] .search-wrap {
+  background: rgba(30,31,40,.60);
+  border-color: rgba(255,255,255,.10);
+}
+[data-theme="light"] .search-wrap {
+  background: rgba(255,255,255,.92);
+  border-color: rgba(0,0,0,.08);
+}
+.search-engine-button {
+  min-width: 0;
+  height: 26px;
+  padding: 0 20px 0 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.28);
+  background: rgba(255,255,255,.22);
+  color: #f1f2f4;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  line-height: 24px;
+  box-shadow: none;
+}
+.search-engine-button:hover {
+  background: rgba(255,255,255,.32);
+}
+.search-engine-wrap { color: #f1f2f4; }
+[data-theme="light"] .search-engine-wrap { color: #3a404b; }
+[data-theme="dark"] .search-engine-wrap { color: #edf0f5; }
+[data-theme="light"] .search-engine-button {
+  background: rgba(255,255,255,.88);
+  border-color: rgba(0,0,0,.08);
+  color: #3a404b;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+[data-theme="light"] .search-engine-button:hover {
+  background: #fff;
+}
+[data-theme="dark"] .search-engine-button {
+  background: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.18);
+  color: #edf0f5;
+}
+[data-theme="dark"] .search-engine-button:hover {
+  background: rgba(255,255,255,.22);
+}
+.search-engine-menu {
+  min-width: 150px;
+  padding: 5px;
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.search-engine-option {
+  min-height: 34px;
+  border-radius: 9px;
+}
+.tbtn-icon {
+  flex: 0 0 44px;
+  box-shadow: 0 7px 20px rgba(0,0,0,.12);
+}
+.tbtn-icon:focus-visible,
+.search-engine-button:focus-visible,
+.btn:focus-visible,
+.card:focus-visible {
+  outline: 2px solid rgba(79,107,254,.72);
+  outline-offset: 2px;
+}
+.card {
+  transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+.card:hover {
+  transform: translateY(-1px);
+}
+.widget {
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+.widget.wgt-style-minimal {
+  padding: 6px 8px;
+}
+.widget .widget-label {
+  font-size: 9px;
+  line-height: 11px;
+  letter-spacing: .08em;
+  font-weight: 500;
+}
+.widget .widget-value {
+  margin-top: 2px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+.date-widget .widget-value { font-size: 15px; }
+.time-widget .widget-value { font-size: 15px; }
+.weather-temp { font-size: 15px; }
+@media (max-width: 640px) {
+  .toolbar { top: 0; right: 0; padding: 10px; gap: 8px; }
+  .tbtn-icon { flex-basis: 40px; width: 40px; height: 40px; }
+  .hero { padding: 36px 0 28px; gap: 24px; }
+  #searchInput { font-size: 14px; }
+}
+
+
+/* v15 refinements */
+.widgets {
+  position: static;
+  z-index: auto;
+  width: 100%;
+  max-width: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.widget { width: auto; min-width: 0; }
+.weather-widget { width: auto; min-width: 0; }
+.weather-main { gap: 7px; }
+.weather-description { font-size: 12px; opacity: .9; white-space: nowrap; }
+.weather-meta { display: none; }
+.ping-widget { min-width: 0; }
+.ping-list { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; }
+.ping-row { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 12px; }
+.ping-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--unknown); box-shadow: 0 0 0 1px rgba(255,255,255,.35); }
+.ping-dot.online { background: var(--online); }
+.ping-dot.offline { background: var(--offline); }
+.ping-host { color: var(--glass-fg-soft); }
+.ping-latency { font-weight: 700; }
+.ping-empty, .ping-loading { font-size: 11px; color: var(--glass-fg-soft); }
+
+.settings-body { gap: 8px; }
+.settings-col { gap: 8px; }
+.settings-body fieldset { padding: 7px 9px; }
+.settings-compact .field { margin-bottom: 5px; }
+.settings-compact .field-inline { margin-bottom: 5px; }
+.widget-settings-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.widget-setting-card { padding: 7px; }
+.widget-setting-card .field { margin-bottom: 5px; }
+.ping-host-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; }
+.ping-host-fields .field { margin-bottom: 5px; }
+.modal-actions { margin-top: 9px; }
+
+/* v16 settings and widget fixes */
+.widget[hidden], #widgets[hidden] { display: none !important; }
+.ping-host-fields { display: grid; grid-template-columns: 1fr; gap: 5px; }
+.ping-host-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ping-host-row input { border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; font-size: 12px; color: var(--text); background: var(--surface); min-width: 0; }
+
+
+/* v20 layout correction: fixed top header row and bottom ping dock */
+.app {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  /* The bottom pad only exists to keep content clear of the fixed ping dock, so
+     it is measured from the dock itself (updateBottomReserve(), v29) instead of
+     being a fixed 110px that reserves empty air when the dock is short or off.
+     Every pixel saved here is a pixel of budget for the category blocks. */
+  padding: 8px 22px var(--app-pad-bottom, 110px);
+}
+
+.hero {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  padding: 8px 0 34px;
+  text-align: center;
+}
+
+.brand {
+  min-height: 30px;
+  margin: 0 auto;
+  font-size: 22px;
+}
+
+.topbar {
+  position: relative;
+  width: 100%;
+  min-height: var(--search-height, 38px);
+  /* The search engine dropdown hangs out of this row and has to stay above the
+     favourites shelf below it (its backdrop-filter makes it paint as its own
+     layer, which used to cover the open menu). */
+  z-index: 40;
+}
+
+.topbar .widgets {
+  position: absolute;
+  left: 0;
+  top: 0;
+  justify-content: flex-start;
+  width: auto;
+  max-width: calc(50% - (var(--search-width, 480px) / 2) - 20px);
+  min-width: 0;
+  flex-wrap: nowrap;
+  height: var(--search-height, 38px);
+}
+
+.topbar .search-wrap {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--search-width, 480px);
+  min-width: 0;
+  height: var(--search-height, 38px);
+  min-height: var(--search-height, 38px);
+}
+
+.topbar .toolbar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0;
+  min-width: 0;
+  height: var(--search-height, 38px);
+}
+
+.topbar .tbtn {
+  height: var(--search-height, 38px);
+  min-width: 0;
+  white-space: nowrap;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.topbar .tbtn:not(.tbtn-primary) {
+  padding: 0 14px;
+}
+
+/* The icon box must be exactly the icon size: a wider flex-basis would pad the
+   glyph asymmetrically and push the icon + label off the button's centre. */
+.topbar .toolbar-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.topbar .tbtn > span {
+  display: block;
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+.topbar .tbtn-primary {
+  /* Explicit, because .tbtn-primary's accent fill is declared after .tbtn and
+     would otherwise paint the add button solid blue in the bar. */
+  background: rgba(var(--button-tint), var(--button-alpha));
+  border: 1px solid rgba(255,255,255,.22);
+}
+
+.topbar .tbtn-primary:hover {
+  background: rgba(var(--button-tint), calc(var(--button-alpha) + .14));
+}
+
+.topbar .widgets {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+
+.topbar .widget {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 999px;
+  padding: 0 12px;
+  overflow: hidden;
+  min-width: 0;
+  white-space: nowrap;
+  background: rgba(var(--widget-tint), var(--widget-alpha));
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  cursor: default;
+}
+
+.topbar .widget + .widget {
+  border-left: 1px solid rgba(255,255,255,.22);
+  margin-left: 0;
+}
+
+[data-theme="light"] .topbar .widget {
+  border-color: rgba(0,0,0,.08);
+  color: var(--glass-fg);
+}
+
+[data-theme="dark"] .topbar .widget {
+  border-color: rgba(255,255,255,.12);
+}
+
+.topbar .widget.wgt-style-minimal {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.topbar .widget.wgt-style-glass {
+  /* Keeps its own brighter tint but follows the widget slider. */
+  background: rgba(255,255,255, var(--widget-alpha));
+  border-color: rgba(255,255,255,.3);
+}
+
+.topbar .date-widget .widget-value,
+.topbar .time-widget .widget-value,
+.topbar .weather-temp {
+  font-size: var(--widget-font-size, 15px);
+  margin-top: 0;
+  line-height: 1.1;
+}
+
+.topbar .time-widget .widget-value {
+  font-size: var(--widget-font-size, 15px);
+}
+
+.topbar .weather-description {
+  font-size: 11px;
+}
+
+.topbar .weather-icon {
+  font-size: 15px;
+}
+
+.topbar .search-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.topbar .search-wrap {
+  background: rgba(var(--search-tint), var(--search-alpha));
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Kept pointing at the halo token so the search field stays wired to the same
+   switch as every other glass surface; inert in both themes today (v31). */
+.topbar #searchInput,
+.topbar #searchInput::placeholder,
+.topbar .search-icon {
+  text-shadow: var(--glass-halo);
+}
+
+[data-theme="light"] .topbar .search-wrap,
+[data-theme="light"] .topbar .tbtn {
+  border-color: rgba(0,0,0,.08);
+  color: var(--glass-fg);
+}
+
+[data-theme="dark"] .topbar .search-wrap,
+[data-theme="dark"] .topbar .tbtn {
+  border-color: rgba(255,255,255,.12);
+}
+
+.ping-dock {
+  position: fixed;
+  left: 22px;
+  right: 22px;
+  bottom: 16px;
+  z-index: 25;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ping-dock .ping-widget {
+  width: auto;
+  max-width: calc(100% - 20px);
+  height: var(--search-height, 38px);
+  min-height: var(--search-height, 38px);
+  margin: 0;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: rgba(var(--widget-tint), var(--widget-alpha));
+  border: 1px solid rgba(255,255,255,.20);
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  pointer-events: auto;
+  cursor: default;
+}
+
+.ping-dock .ping-list {
+  width: auto;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 8px 20px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.ping-dock .ping-row {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+[data-theme="light"] .ping-dock .ping-widget {
+  border-color: rgba(0,0,0,.08);
+}
+/* The dot is outlined so it stays a dot on a pale fill as well as a dark one. */
+[data-theme="light"] .ping-dot { box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+
+@media (max-width: 1200px) {
+  .topbar .widgets {
+    max-width: calc(50% - (min(var(--search-width, 480px), 300px) / 2) - 14px);
+    gap: 8px;
+  }
+  .topbar .search-wrap {
+    max-width: min(var(--search-width, 480px), 300px);
+  }
+  .topbar .tbtn > span {
+    display: none;
+  }
+  .topbar .tbtn {
+    width: var(--search-height, 38px);
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .app { padding-left: 12px; padding-right: 12px; }
+  .topbar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-height: 0;
+  }
+  .topbar .widgets,
+  .topbar .search-wrap,
+  .topbar .toolbar {
+    position: static;
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: none;
+    width: 100%;
+    max-width: none;
+  }
+  .topbar .widgets { justify-content: center; }
+  .topbar .toolbar { justify-content: center; }
+  .ping-dock { left: 10px; right: 10px; bottom: 10px; }
+  .ping-dock .ping-widget { border-radius: 24px; height: auto; min-height: var(--search-height, 38px); padding: 8px 14px; max-width: 100%; }
+  .ping-dock .ping-list { justify-content: center; flex-wrap: wrap; }
+}
+
+/* v20: two related settings controls sharing one line (Тема/Шрифт, Размер/Колонки) */
+.pair-row { align-items: flex-end; }
+.settings-compact .pair-row { margin-bottom: 5px; }
+.settings-compact .pair-row .field { flex: 1 1 0; min-width: 0; margin-bottom: 0; }
+.settings-compact > .pair-row:last-child { margin-bottom: 0; }
+
+/* v30: a checkbox sharing the line with a select or a switch. It keeps its own
+   width instead of claiming half the row, and sits level with the middle of the
+   control beside it rather than on the row's baseline. */
+.settings-compact .pair-row .pair-check {
+  flex: 0 1 auto;
+  margin-bottom: 0;
+  padding-bottom: 7px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+.settings-compact .pair-row .pair-check input { flex: 0 0 auto; }
+
+/* v30: "Открывать" as a switch. The checkbox itself is the accessible control and
+   stays where a screen reader expects it; the track and the thumb are drawn on top
+   of it, and the word beside them names the current state. */
+.switch-field { min-width: 0; }
+.switch { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.switch input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.switch-track {
+  flex: 0 0 auto;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(127,127,127,.35);
+  transition: background .15s ease;
+  pointer-events: none;
+}
+.switch-track::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+  transition: transform .15s ease;
+}
+.switch input:checked ~ .switch-track { background: var(--accent); }
+.switch input:checked ~ .switch-track::after { transform: translateX(14px); }
+.switch input:focus-visible ~ .switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.switch-text { min-width: 0; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* v30: the new-category field runs the full width of its column, up to the button. */
+.category-add-row { gap: 6px; }
+.category-add-row input[type="text"] { flex: 1 1 auto; width: 100%; min-width: 0; }
+.category-add-row .btn { flex: 0 0 auto; white-space: nowrap; }
+
+/* v30: tick marks under a slider, one every ten, built by app.js. Each mark is a
+   click target that jumps the handle to its value, so the row is inset by half a
+   thumb width on both sides — that is the span the thumb's centre actually travels,
+   and a mark that does not line up with the handle it moves is worse than none.
+   Each button is one step wide and centred on its own value, so the marks divide
+   the track into hit zones without gaps or overlap. */
+.range-ticks { position: relative; height: 9px; margin: 0 8px; color: var(--range-tick-ink); }
+.range-tick {
+  position: absolute;
+  top: 0;
+  width: 10%;
+  height: 9px;
+  padding: 0;
+  transform: translateX(-50%);
+  border: 0;
+  background: none;
+  /* A <button> does not inherit `color`: the UA sheet pins it to `buttontext`,
+     i.e. black, and `appearance: none` does not undo that. The mark below is
+     painted in `currentColor`, so without this the ticks came out black in both
+     themes and disappeared into the dark theme's modal surface (v31). `inherit`
+     hands them the --text-muted the container already set, per theme. */
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.range-tick::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 4px;
+  margin-left: -.5px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: .5;
+}
+.range-tick[data-major]::before { height: 7px; opacity: .85; }
+.range-tick:hover::before { background: var(--accent); opacity: 1; }
+
+/* The same idea inside the item modal, where the pairs are wider: the two
+   controls split the row evenly, except a colour swatch, which hugs its
+   content at the right end (v27, per-card icon background). */
+.modal-item .pair-row > .field { flex: 1 1 0; margin-bottom: 0; }
+.modal-item .pair-row > .field-color {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.modal-item .pair-row > .field-color input[type="color"] {
+  width: 58px;
+  min-width: 58px;
+  height: 35px;
+  min-height: 35px;
+  padding: 3px;
+}
+.modal-item .pair-row > .field-color input[type="color"]:disabled { cursor: not-allowed; opacity: .45; }
+
+
+/* v23 HemmaHub refinements */
+
+/* Toolbar: icon-only round buttons (the label lives in title/aria-label). */
+.topbar .tbtn,
+.topbar .tbtn:not(.tbtn-primary) {
+  width: var(--search-height, 38px);
+  min-width: var(--search-height, 38px);
+  flex: 0 0 auto;
+  padding: 0;
+  gap: 0;
+  border-radius: 999px;
+}
+.topbar .toolbar-icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Search engine switcher: a circle carrying the engine's first letter. */
+.search-engine-wrap::after { display: none; }
+/* The native select is only a hidden mirror of the custom menu; it must not
+   claim any width of its own (its min-width used to force a scrollbar). */
+#searchEngine { min-width: 0; padding: 0; border: 0; overflow: hidden; }
+.search-engine-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* "Цвет фона иконки": label and swatch on one compact line. */
+.field-color { flex-direction: row; align-items: center; gap: 10px; }
+.field-color input[type="color"] {
+  flex: 0 0 auto;
+  width: 46px;
+  min-width: 46px;
+  height: 26px;
+  min-height: 26px;
+  padding: 2px;
+}
+
+/* "Фон иконок" and the colour it is painted with share a single row: the
+   checkbox switches the plate behind every icon on, the swatch to its right
+   picks that plate's colour. The swatch greys out while the plate is off. */
+.icon-bg-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.icon-bg-row .field-inline, .icon-bg-row .field { margin-bottom: 0; }
+.icon-bg-row .field-color { flex: 0 0 auto; gap: 0; }
+.icon-bg-row input[type="color"]:disabled { cursor: not-allowed; opacity: .45; }
+
+/* Category blocks (display mode "block"): one translucent panel per category,
+   listing its items one per row. The section is a centred flex row, so blocks
+   grow outward from the middle of the page as categories are added. It sits
+   between the card area and the fixed ping dock. */
+#blocksSection {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px;
+  /* Nothing follows the block section, so the 36px that separates stacked
+     sections would only be dead space above the dock — and dead space here
+     costs a block row (v29). */
+  margin-bottom: 12px;
+}
+#blocksSection[hidden] { display: none; }
+/* Last resort (v28): when every block is already split as wide as it goes and
+   the collection still does not fit, the section takes the leftover overflow
+   itself — so the page as a whole still never grows a scrollbar. The cap is
+   written by fitBlocks(), which is the only thing that knows how much room is
+   left under the ping dock. */
+#blocksSection.blocks-scroll {
+  max-height: var(--blocks-max-h, none);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.35) transparent;
+}
+
+.block {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--block-gap);
+  min-width: var(--block-min-w);
+  max-width: var(--block-max-w);
+  padding: var(--block-pad);
+  border-radius: var(--block-radius);
+  /* Fill, border, blur and shadow are all copied from .topbar .widget so a block
+     and a widget at the same slider value are the same colour (v27). */
+  background: rgba(var(--block-tint), var(--block-alpha));
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+[data-theme="light"] .block {
+  border-color: rgba(0,0,0,.08);
+}
+[data-theme="dark"] .block {
+  border-color: rgba(255,255,255,.12);
+}
+
+/* The title is the category name, edited in place. The frame only appears on
+   hover/focus so a block at rest still reads as a plain heading. */
+.block-title {
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  outline: none;
+  font-size: var(--block-title-size);
+  font-weight: 600;
+  color: var(--glass-fg);
+  text-shadow: var(--glass-halo);
+  overflow-wrap: anywhere;
+}
+.block-title[contenteditable] { cursor: text; }
+.block-title[contenteditable]:hover { border-color: rgba(255,255,255,.22); }
+.block-title[contenteditable]:focus { border-color: rgba(255,255,255,.45); background: rgba(0,0,0,.20); }
+/* The editing frame is drawn in the theme's own ink: a white outline on a
+   white-tinted panel is not a frame at all (v30). */
+[data-theme="light"] .block-title[contenteditable]:hover { border-color: rgba(0,0,0,.16); }
+[data-theme="light"] .block-title[contenteditable]:focus { border-color: rgba(0,0,0,.30); background: rgba(255,255,255,.55); }
+/* "Без категории" is not a real category, so it cannot be renamed. */
+.block-title-static { color: var(--glass-fg-soft); }
+
+.block-body { display: flex; flex-direction: column; gap: var(--block-row-gap); }
+
+/* Rows in several columns (v28). The page is meant to hold everything on one
+   screen, so a block is only ever as tall as the screen allows: when one column
+   would push the document past the viewport, fitBlocks() writes --block-cols /
+   --block-rows onto the block and the rows continue in a second (third, fourth)
+   column instead of growing further down. Laid out column-first, so the list
+   still reads top-to-bottom before it wraps sideways. */
+.block[data-cols] > .block-body {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(var(--block-cols, 1), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--block-rows, 1), min-content);
+  column-gap: calc(var(--block-gap) * 1.5);
+}
+/* The height a split saves is paid for in width: the panel's own bounds grow
+   with the column count, so each of two columns is as wide as a one-column
+   block was rather than half of it. */
+.block[data-cols] {
+  min-width: min(100%, calc(var(--block-min-w) * var(--block-cols, 1)));
+  max-width: min(100%, calc(var(--block-max-w) * var(--block-cols, 1)));
+}
+
+/* Rows keep the .card class for behaviour (drag, context menu, plain-icon mode)
+   but lay out horizontally and drop the card's own panel — the block is the
+   panel here. */
+.block-item {
+  flex-direction: row;
+  align-items: center;
+  gap: calc(var(--block-icon-size) * .35);
+  text-align: left;
+  padding: var(--block-row-pad);
+  border-radius: var(--block-row-radius);
+  background: transparent;
+  border: 1px solid transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+.block-item:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.14); }
+[data-theme="light"] .block-item:hover { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.08); }
+
+/* In a row the indicator leads the line instead of hanging off the tile. */
+.block-status { position: static; flex: 0 0 auto; }
+.block-status-none {
+  box-sizing: border-box;
+  width: var(--block-dot-size);
+  height: var(--block-dot-size);
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.35);
+  background: transparent;
+}
+
+/* A compact version of the card tile, sized by the block-size setting rather
+   than by the card-size one — a block row is not a grid card. */
+.block-icon {
+  flex: 0 0 auto;
+  width: var(--block-icon-size);
+  height: var(--block-icon-size);
+  border-radius: var(--block-icon-radius);
+  font-size: calc(var(--block-icon-size) * .5);
+  box-shadow: 0 3px 8px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.15);
+}
+.block-icon img { padding: calc(var(--block-icon-size) * .077); }
+/* The lift-on-hover of a grid tile would make a text row jump. */
+.block-item:hover .block-icon {
+  transform: none;
+  box-shadow: 0 3px 8px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.15);
+}
+.block-name { text-align: left; font-size: var(--block-name-size); }
+
+/* Push the whole card area a little further down the page. */
+.hero { padding-bottom: 64px; }
+
+/* Favourites shelf: the same translucent panel as a category block — same fill,
+   same border, same blur — constrained to a single row that scrolls sideways
+   when it runs out of room. The panel hugs its cards (never wider than the card
+   area) and shares the blocks transparency slider. */
+#favoritesSection {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: min(100%, var(--cards-area-width, 100%));
+  padding: 10px 14px;
+  border-radius: 22px;
+  background: rgba(var(--block-tint), var(--block-alpha));
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: 0 8px 28px rgba(0,0,0,.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+#favoritesSection[hidden] { display: none; }
+[data-theme="light"] #favoritesSection {
+  border-color: rgba(0,0,0,.08);
+}
+[data-theme="dark"] #favoritesSection {
+  border-color: rgba(255,255,255,.12);
+}
+#favoritesGrid {
+  flex-wrap: nowrap;
+  /* Centring is done by the auto margins below, not by justify-content — see the
+     comment there. This has to be reset explicitly because .grid centres. */
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* A native scrollbar would sit inside the panel and break the look it shares
+     with the ping dock; sideways scrolling still works with wheel/touch/keys. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+/* Auto margins instead of justify-content: a centred flex row clips its own
+   overflow on the leading side, which would make the first favourites
+   unreachable once the shelf starts scrolling. */
+#favoritesGrid > .card:first-child { margin-inline-start: auto; }
+#favoritesGrid > .card:last-child { margin-inline-end: auto; }
+#favoritesGrid .card { padding-top: 6px; padding-bottom: 5px; }
+#favoritesGrid::-webkit-scrollbar { display: none; }
+
+@media (max-width: 640px) {
+  #favoritesSection { padding: 8px 10px; border-radius: 18px; }
+  .hero { padding-bottom: 40px; }
+  /* One block per row on a phone, stretched to the available width. */
+  #blocksSection { gap: 12px; }
+  .block { min-width: 0; max-width: none; width: 100%; border-radius: 18px; }
+  /* A split block follows the same rule: its columns share the screen width
+     instead of each claiming a desktop block's worth of it. */
+  .block[data-cols] { min-width: 0; max-width: none; }
+}
+
+/* v24: "icons only" cards — the tile keeps its size but loses its fill, so the
+   artwork sits directly on the wallpaper. The inline tile colour written by
+   the renderer is omitted in this mode, so no !important is needed here.
+   v27: the class is decided per card by the renderer instead of by an attribute
+   on <html>, because a card may override the global switch either way. */
+.card-icon.icon-plain,
+.card:hover .card-icon.icon-plain {
+  background: transparent;
+  box-shadow: none;
+}
+.card-icon.icon-plain {
+  /* Replaces the tile's drop shadow so a light icon stays visible on a light
+     wallpaper. */
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,.45));
+}
+.card-icon.icon-plain img { background: transparent; padding: 0; }
+
+/* ===== Sticky Note (v29) =====================================================
+   The one widget with a free position: app.js writes left/top (from a fraction
+   of the viewport), so everything here is size and skin. Both states live in the
+   same node and data-state picks which one paints, so a drag never has to hand
+   the pointer over to a different element mid-gesture. The surface follows the
+   widget transparency slider, like every other widget. */
+.sticky-note {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 90;
+  color: var(--glass-fg);
+  font-size: 13px;
+  text-shadow: var(--glass-halo);
+}
+.sticky-note[hidden] { display: none; }
+.sticky-note[data-state="collapsed"] .sticky-panel,
+.sticky-note[data-state="expanded"] .sticky-collapsed { display: none; }
+/* A drag must not turn into a text selection halfway across the screen. */
+body.dragging-sticky { cursor: grabbing; user-select: none; }
+
+/* --- Collapsed: nothing but the glyph, on a round frosted button. --- */
+.sticky-collapsed {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(var(--widget-tint), var(--widget-alpha));
+  box-shadow: 0 8px 28px rgba(0,0,0,.20);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  cursor: grab;
+  /* Pointer Events only deliver a touch drag if the browser is told not to
+     scroll with it. */
+  touch-action: none;
+}
+.sticky-collapsed:hover { border-color: rgba(255,255,255,.42); }
+
+/* --- Expanded: header (the drag handle), toolbar, lines, add button. --- */
+.sticky-panel {
+  width: 268px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(var(--widget-tint), var(--widget-alpha));
+  box-shadow: 0 14px 40px rgba(0,0,0,.28);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+[data-theme="light"] .sticky-collapsed,
+[data-theme="light"] .sticky-panel { border-color: rgba(0,0,0,.10); }
+
+.sticky-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 8px 8px 11px;
+  border-bottom: 1px solid rgba(127,127,127,.20);
+  cursor: grab;
+  touch-action: none;
+}
+.sticky-note.sticky-dragging .sticky-head,
+.sticky-note.sticky-dragging .sticky-collapsed { cursor: grabbing; }
+.sticky-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+
+/* The icon ships with a near-black fill, which would vanish on the dark theme,
+   so that theme inverts it and gives it a dark halo — a panel at full
+   transparency leaves the glyph sitting straight on the wallpaper. The light
+   theme keeps the artwork as drawn and adds nothing: a white glow around dark
+   line art is the same highlighter effect the text tokens dropped in v31. */
+/* No `opacity` on the glyph: the two states have to read as the same icon, and
+   fading one of them is how they drift apart. */
+.sticky-glyph { width: 22px; height: 22px; filter: invert(1); pointer-events: none; }
+.sticky-glyph-sm { width: 15px; height: 15px; }
+[data-theme="light"] .sticky-glyph { filter: none; }
+
+.sticky-btn, .sticky-tool, .sticky-line-del, .sticky-add {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.sticky-btn { width: 22px; height: 22px; font-size: 15px; line-height: 1; color: var(--glass-fg-soft); }
+.sticky-btn:hover { color: var(--glass-fg); background: rgba(127,127,127,.22); }
+
+.sticky-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(127,127,127,.20);
+}
+.sticky-tool { width: 24px; height: 24px; font-size: 12px; color: var(--glass-fg-soft); }
+.sticky-tool:hover { color: var(--glass-fg); background: rgba(127,127,127,.22); }
+.sticky-tool-sep { width: 1px; height: 15px; margin: 0 4px; background: rgba(127,127,127,.35); }
+
+.sticky-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: min(46vh, 340px);
+  overflow-y: auto;
+  padding: 6px 4px 6px 8px;
+}
+.sticky-lines::-webkit-scrollbar { width: 6px; }
+.sticky-lines::-webkit-scrollbar-thumb { background: rgba(127,127,127,.40); border-radius: 3px; }
+
+.sticky-line { display: flex; align-items: flex-start; gap: 6px; padding: 2px 2px 2px 3px; border-radius: 7px; }
+.sticky-line:hover { background: rgba(127,127,127,.14); }
+.sticky-check { flex: 0 0 auto; width: 13px; height: 13px; margin: 4px 0 0; accent-color: var(--accent, #4c8dff); cursor: pointer; }
+.sticky-bullet { flex: 0 0 auto; width: 13px; text-align: center; line-height: 1.45; color: var(--glass-fg-faint); }
+.sticky-text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.45;
+  outline: none;
+  /* Typed spaces are kept and long URLs wrap instead of widening the panel. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sticky-line[data-done="true"] .sticky-text { text-decoration: line-through; opacity: .5; }
+/* :empty cannot drive this — a browser is free to leave a <br> in an emptied
+   contenteditable — so the placeholder hangs off a flag app.js maintains. It is
+   shown on the line being edited and on the first line, never on every blank. */
+.sticky-line[data-blank="true"]:first-child .sticky-text::before,
+.sticky-line[data-blank="true"]:focus-within .sticky-text::before {
+  content: attr(data-placeholder);
+  opacity: .42;
+  pointer-events: none;
+}
+.sticky-line-del { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 2px; font-size: 13px; line-height: 1; opacity: 0; }
+.sticky-line:hover .sticky-line-del { opacity: .6; }
+.sticky-line-del:hover { opacity: 1; background: rgba(224,64,64,.28); }
+
+.sticky-add {
+  margin: 0 8px 8px;
+  padding: 5px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px dashed rgba(127,127,127,.40);
+  color: var(--glass-fg-soft);
+}
+.sticky-add:hover { color: var(--glass-fg); background: rgba(127,127,127,.16); }
+
+@media (max-width: 640px) {
+  .sticky-panel { width: min(268px, calc(100vw - 24px)); }
+}
+
+/* ===== Network speed (v30) ====================================================
+   The Sticky Note's two-state shell, minus the free position: this one is pinned
+   to the bottom-left corner, so there is no drag and no stored coordinates. It
+   borrows the note's surface rules — same tint, same slider, same halo — and only
+   the contents differ. The panel grows upward from the corner so the collapsed
+   button and the expanded panel share a bottom edge and the icon never moves. */
+.speed-widget {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  color: var(--glass-fg);
+  font-size: 13px;
+  text-shadow: var(--glass-halo);
+}
+.speed-widget[hidden] { display: none; }
+.speed-widget[data-state="collapsed"] .speed-panel,
+.speed-widget[data-state="expanded"] .speed-collapsed { display: none; }
+
+.speed-collapsed {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(var(--widget-tint), var(--widget-alpha));
+  box-shadow: 0 8px 28px rgba(0,0,0,.20);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  cursor: pointer;
+}
+.speed-collapsed:hover { border-color: rgba(255,255,255,.42); }
+
+.speed-panel {
+  width: 246px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(var(--widget-tint), var(--widget-alpha));
+  box-shadow: 0 14px 40px rgba(0,0,0,.28);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+[data-theme="light"] .speed-collapsed,
+[data-theme="light"] .speed-panel { border-color: rgba(0,0,0,.10); }
+
+.speed-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 8px 8px 11px;
+  border-bottom: 1px solid rgba(127,127,127,.20);
+}
+.speed-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.speed-glyph { width: 24px; height: 24px; filter: invert(1); pointer-events: none; }
+.speed-glyph-sm { width: 15px; height: 15px; }
+[data-theme="light"] .speed-glyph { filter: none; }
+
+.speed-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  border-radius: 7px;
+  color: var(--glass-fg-soft);
+  cursor: pointer;
+}
+.speed-btn:hover { color: var(--glass-fg); background: rgba(127,127,127,.22); }
+
+.speed-field { display: flex; flex-direction: column; gap: 4px; margin: 9px 11px 0; font-size: 11px; color: var(--glass-fg-soft); }
+.speed-field select {
+  border: 1px solid rgba(127,127,127,.35);
+  border-radius: 8px;
+  padding: 6px 7px;
+  font: inherit;
+  font-size: 12px;
+  /* The panel's own text colour would be invisible against a native dropdown's
+     white list, so the control keeps the modal palette. */
+  color: var(--text);
+  background: var(--surface);
+  text-shadow: none;
+  min-width: 0;
+}
+
+.speed-run {
+  margin: 8px 11px 0;
+  padding: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+  text-align: center;
+  border: 1px solid rgba(127,127,127,.40);
+  border-radius: 9px;
+  background: rgba(127,127,127,.14);
+  cursor: pointer;
+}
+.speed-run:hover:not(:disabled) { background: rgba(127,127,127,.24); }
+.speed-run:disabled { opacity: .55; cursor: progress; }
+
+.speed-results { display: flex; flex-direction: column; gap: 2px; margin: 9px 11px 0; }
+.speed-result { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.speed-result-label { font-size: 11px; color: var(--glass-fg-soft); }
+.speed-result-value { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.speed-status { margin: 8px 11px 0; font-size: 11px; color: var(--glass-fg-soft); line-height: 1.35; }
+.speed-status.is-error { color: var(--danger); }
+.speed-hint { margin: 3px 11px 10px; font-size: 10px; color: var(--glass-fg-faint); line-height: 1.35; }
+
+/* The ping dock owns the bottom centre, so on a narrow screen the panel would sit
+   on top of it. Shrinking is enough — the dock wraps its own rows. */
+@media (max-width: 640px) {
+  .speed-widget { left: 12px; bottom: 12px; }
+  .speed-panel { width: min(246px, calc(100vw - 24px)); }
+}
+
+/* ===== Monitoring (v32) =======================================================
+   The availability-history window. It is a plain .modal on --surface — the
+   frosted --glass-* tokens belong to the widgets that float over the wallpaper,
+   not to a dialog — laid out like .modal-wallpaper: a fixed head and footer with
+   one scrolling body between them, so the period buttons stay reachable however
+   long the outage list gets. */
+.modal-monitor {
+  max-width: 720px;
+  width: min(720px, calc(100vw - 28px));
+  max-height: calc(100vh - 28px);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.monitor-title { min-width: 0; }
+.monitor-title h3 { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.monitor-meta {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  /* The URL is the long part; a check target is more useful truncated than
+     wrapped onto three lines. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monitor-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.monitor-ranges { display: flex; gap: 5px; flex-wrap: wrap; }
+.monitor-range {
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.monitor-range:hover { color: var(--text); border-color: var(--text-muted); }
+.monitor-range.is-active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+.monitor-body { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+.monitor-placeholder { margin: 0; padding: 10px 0; font-size: 12px; color: var(--text-muted); }
+.monitor-placeholder.is-error { color: var(--danger); }
+
+/* Six tiles, so a fixed three columns rather than auto-fit: auto-fit lands on
+   five at this width and leaves the sixth alone on its own row. */
+.monitor-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.monitor-tile { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; }
+.monitor-tile-label { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+.monitor-tile-value { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* The hint line is often empty; reserving its height keeps the tiles a grid
+   instead of a ragged row. */
+.monitor-tile-hint { min-height: 14px; font-size: 11px; color: var(--text-muted); }
+.monitor-tile-value.is-good { color: var(--online); }
+.monitor-tile-value.is-warn { color: var(--partial); }
+.monitor-tile-value.is-bad { color: var(--offline); }
+.monitor-tile-value.is-online { color: var(--online); }
+.monitor-tile-value.is-offline { color: var(--offline); }
+.monitor-tile-value.is-unknown,
+.monitor-tile-value.is-checking { color: var(--text-muted); }
+
+.monitor-section h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.monitor-hint { font-weight: 400; font-size: 11px; }
+
+/* One segment per time bucket. The 1px gaps are what make it readable as
+   buckets rather than as a gradient — each one has its own tooltip. */
+.monitor-bar { display: flex; gap: 1px; height: 26px; border-radius: 7px; overflow: hidden; background: var(--border); }
+.monitor-seg { flex: 1 1 0; min-width: 0; }
+.monitor-seg.is-up { background: var(--online); }
+.monitor-seg.is-partial { background: var(--partial); }
+.monitor-seg.is-down { background: var(--offline); }
+/* No samples in this bucket: the portal was not watching. Deliberately not red —
+   "we do not know" is not the same claim as "it was down". */
+.monitor-seg.is-none { background: var(--unknown); }
+.monitor-axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--text-muted); }
+
+.monitor-plot { display: flex; gap: 7px; }
+/* The Y labels are HTML, not <text> inside the SVG: the plot is stretched
+   horizontally to the modal width, which would leave SVG glyphs stretched with
+   it. space-between puts the first and last label on the top and bottom
+   gridlines; subtracting half a line from each padding lines their centres up
+   with the plot's own top (8px) and bottom (14px) margins, and that lands the
+   middle label on the middle gridline for free. */
+.monitor-yaxis {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 116px;
+  padding: calc(8px - .5em) 0 calc(14px - .5em);
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.monitor-chart { flex: 1 1 auto; min-width: 0; height: 116px; overflow: visible; }
+/* Every stroke is non-scaling: the viewBox is stretched on X only, so without
+   this a vertical tick would be drawn wider than a horizontal gridline. */
+.monitor-chart line, .monitor-chart polyline { vector-effect: non-scaling-stroke; }
+.monitor-grid { stroke: var(--border); stroke-width: 1; }
+.monitor-band { fill: var(--accent); opacity: .22; stroke: none; }
+.monitor-line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
+.monitor-dot { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; }
+.monitor-down { stroke: var(--offline); stroke-width: 2; }
+
+.monitor-incidents { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.monitor-incident {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 9px;
+  border-radius: 9px;
+  font-size: 12px;
+  background: rgba(127,127,127,.07);
+}
+.monitor-incident.is-ongoing { background: rgba(224,70,63,.10); }
+.monitor-incident-when { font-variant-numeric: tabular-nums; }
+.monitor-incident-dur { font-weight: 600; font-variant-numeric: tabular-nums; }
+.monitor-incident.is-ongoing .monitor-incident-dur { color: var(--offline); }
+.monitor-incident-why { margin-left: auto; color: var(--text-muted); }
+
+.monitor-footer { display: flex; align-items: center; gap: 12px; }
+.monitor-note { flex: 1; margin: 0; font-size: 11px; line-height: 1.35; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .modal-monitor { padding: 14px; }
+  .monitor-summary { grid-template-columns: repeat(2, 1fr); }
+  /* Half height on a phone: the bar above still carries the shape of the period,
+     and the tiles are the part worth reading on a small screen. */
+  .monitor-yaxis, .monitor-chart { height: 84px; }
+  .monitor-incident-why { margin-left: 0; }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "home-portal",
+  "version": "1.1.0",
+  "description": "Personal home portal - start page for local services and bookmarks",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.19.2"
+  }
+}

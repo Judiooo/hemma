@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<!-- English is the default interface language (v30); app.js rewrites lang and
+     every data-i18n node as soon as the saved language comes back. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HemmaHub</title>
+<link rel="icon" type="image/png" sizes="512x512" href="/icon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-overlay"></div>
+
+<main id="app" class="app">
+  <div class="hero">
+    <div id="brand" class="brand" hidden></div>
+
+    <div class="topbar" id="topbar">
+      <div id="widgets" class="widgets" hidden>
+        <div id="dateWidget" class="widget" hidden></div>
+        <div id="timeWidget" class="widget" hidden></div>
+        <div id="weatherWidget" class="widget" hidden></div>
+      </div>
+
+      <div class="search-wrap" id="searchWrap">
+        <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 5L20.49 19l-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+        <input id="searchInput" type="text" placeholder="" autocomplete="off">
+        <button id="searchClear" class="search-clear" type="button" data-i18n-title="search.clear" data-i18n-aria="search.clear" title="Clear" aria-label="Clear" hidden>×</button>
+        <label class="search-engine-wrap" id="searchEngineCustom" data-i18n-title="search.engine" title="Search engine">
+          <span class="sr-only" data-i18n="search.engine">Search engine</span>
+          <select id="searchEngine" aria-hidden="true" tabindex="-1"></select>
+          <button type="button" id="searchEngineButton" class="search-engine-button" aria-haspopup="listbox" aria-expanded="false" title="Google">G</button>
+          <div id="searchEngineMenu" class="search-engine-menu" role="listbox" hidden></div>
+        </label>
+      </div>
+
+      <div class="toolbar" id="toolbar">
+        <button id="addBtn" class="tbtn tbtn-primary" data-i18n-title="toolbar.add" data-i18n-aria="toolbar.add" title="New item" aria-label="New item"><img class="toolbar-icon" src="/icons/add.svg" alt=""></button>
+        <button id="themeBtn" class="tbtn" data-i18n-title="toolbar.theme" data-i18n-aria="toolbar.theme" title="Theme" aria-label="Theme"><img id="themeIcon" class="toolbar-icon" src="/icons/dark_mode.svg" alt=""></button>
+        <button id="wallpaperBtn" class="tbtn" data-i18n-title="toolbar.wallpaper" data-i18n-aria="toolbar.wallpaper" title="Background" aria-label="Background"><img class="toolbar-icon" src="/icons/wallpaper.svg" alt=""></button>
+        <button id="settingsBtn" class="tbtn" data-i18n-title="toolbar.settings" data-i18n-aria="toolbar.settings" title="Settings" aria-label="Settings"><img class="toolbar-icon" src="/icons/settings.svg" alt=""></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- data-drop-mode marks a container that accepts dragged cards and says which
+       “Display mode” a drop there writes onto the item (v27). -->
+  <section id="favoritesSection" class="section">
+    <div id="favoritesGrid" class="grid" data-drop-mode="favorite"></div>
+  </section>
+
+  <section id="allSection" class="section">
+    <div id="itemsContainer"></div>
+  </section>
+
+  <!-- Category blocks: below the main cards, above the (fixed) ping dock. -->
+  <section id="blocksSection" class="section blocks-section" hidden></section>
+
+  <p id="emptyState" class="empty-state" data-i18n="empty.state" hidden>Nothing here yet. Click “New item” to add a service or a bookmark.</p>
+</main>
+
+<div id="pingDock" class="ping-dock">
+  <div id="pingWidget" class="widget ping-widget" hidden></div>
+</div>
+
+<div id="itemModal" class="modal-overlay" hidden>
+  <div class="modal modal-item">
+    <!-- Text of these three is always written by JS (openItemModal / showConfirm /
+         the icon picker), so they carry no data-i18n: a re-translation pass must
+         not overwrite the message currently on screen. -->
+    <h3 id="itemModalTitle">New item</h3>
+    <form id="itemForm">
+      <input type="hidden" id="itemId">
+      <!-- Service vs bookmark is not user-selectable: both render identically.
+           The kind of an existing card is preserved here on edit. -->
+      <input type="hidden" id="itemType" value="service">
+      <label class="field"><span data-i18n="item.name">Name</span><input type="text" id="itemName" required data-i18n-ph="item.name.ph" placeholder="For example, Nextcloud"></label>
+      <label class="field"><span data-i18n="item.url">URL</span><input type="text" id="itemUrl" required placeholder="http://192.168.1.88:8081/"></label>
+      <div class="field">
+        <div class="field-action-head">
+          <span class="field-label" data-i18n="item.icon">Icon</span>
+          <button type="button" id="itemFaviconBtn" class="btn btn-small" data-i18n="item.icon.fromSite">Take from site</button>
+        </div>
+        <input type="text" id="itemIcon" placeholder="https://.../icon.svg">
+        <p id="itemFaviconHint" class="hint" hidden></p>
+      </div>
+      <div class="icon-picker-block">
+        <div class="icon-picker-head">
+          <span class="field-label">Dashboard Icons</span>
+          <button type="button" id="iconAutoBtn" class="btn btn-small" data-i18n="item.autoPick">Match by name</button>
+        </div>
+        <div class="icon-picker-search-row">
+          <input type="search" id="iconSearchInput" data-i18n-ph="item.iconSearch.ph" placeholder="For example: nextcloud, proxmox, jellyfin" autocomplete="off">
+          <div class="icon-format-switch" id="iconFormatSwitch" role="group" data-i18n-aria="item.iconFormat" aria-label="Icon format">
+            <button type="button" class="icon-format-option" data-icon-format="svg" aria-pressed="true" data-i18n-title="format.svg" title="Vector format">SVG</button>
+            <button type="button" class="icon-format-option" data-icon-format="webp" aria-pressed="false" data-i18n-title="format.webp" title="Raster WebP">WebP</button>
+            <button type="button" class="icon-format-option" data-icon-format="png" aria-pressed="false" data-i18n-title="format.png" title="Raster PNG">PNG</button>
+          </div>
+          <button type="button" id="iconSearchBtn" class="btn btn-small" data-i18n="item.find">Search</button>
+        </div>
+        <div id="iconSearchHint" class="hint">Icons come from Dashboard Icons over a CDN.</div>
+        <div id="iconSearchResults" class="icon-search-results" hidden></div>
+      </div>
+      <label class="field"><span data-i18n="item.category">Category</span><select id="itemCategory"></select></label>
+      <!-- Per-card override of Settings → Cards → “Icon background”. "inherit"
+           follows the global switch, so a card left alone keeps behaving exactly
+           as before; the swatch only matters while the override forces it on. -->
+      <div class="field-row pair-row">
+        <label class="field"><span data-i18n="item.iconBgMode">Icon background</span><select id="itemIconBgMode">
+          <option value="inherit" data-i18n="iconBg.inherit">Follow settings</option>
+          <option value="on" data-i18n="iconBg.on">On</option>
+          <option value="off" data-i18n="iconBg.off">Off</option>
+        </select></label>
+        <label class="field field-color"><span data-i18n="item.iconBgColor">Background color</span><input type="color" id="itemIconBgColor" value="#ffffff"></label>
+      </div>
+      <p id="itemIconBgHint" class="hint" hidden></p>
+      <div class="field-row pair-row">
+        <label class="field"><span data-i18n="item.display">Display mode</span><select id="itemDisplayMode">
+          <option value="grid" data-i18n="display.grid">Main grid</option>
+          <option value="favorite" data-i18n="display.favorite">Favorites</option>
+          <option value="block" data-i18n="display.block">Category block</option>
+        </select></label>
+        <label class="field"><span data-i18n="item.healthCheckType">Check method</span><select id="itemHealthCheckType">
+          <option value="http" data-i18n="check.http">HTTP/HTTPS</option>
+          <option value="tcp" data-i18n="check.tcp">TCP</option>
+          <option value="icmp" data-i18n="check.icmp">ICMP</option>
+        </select></label>
+      </div>
+      <p id="itemDisplayHint" class="hint" hidden></p>
+      <p id="itemCheckTypeHint" class="hint" hidden></p>
+      <label class="field-inline" id="healthCheckRow"><input type="checkbox" id="itemHealthCheck" checked> <span data-i18n="item.healthCheck">Check availability</span></label>
+      <div class="modal-actions">
+        <button type="button" id="itemCancelBtn" class="btn" data-i18n="common.cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-i18n="common.save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Background: its own adaptive dialog, opened from the wallpaper toolbar button.
+     The album, the fill palette and the rotation schedule all live here (v27). -->
+<div id="wallpaperModal" class="modal-overlay" hidden>
+  <div class="modal modal-wallpaper">
+    <div class="modal-heading"><h3 data-i18n="wallpaper.title">Background</h3><button id="wallpaperXBtn" class="modal-close" type="button" data-i18n-title="common.close" title="Close">×</button></div>
+
+    <div class="wallpaper-body">
+      <section class="wallpaper-section">
+        <div class="wallpaper-section-head">
+          <h4 data-i18n="wallpaper.gallery">Gallery</h4>
+          <p id="backgroundStatus" class="hint"></p>
+        </div>
+        <div id="backgroundGallery" class="background-gallery"></div>
+        <div class="wallpaper-actions">
+          <!-- The file input itself is hidden: a <label> styled as a button keeps
+               the row consistent with “Reset background” next to it. -->
+          <label class="btn btn-small" for="setBackgroundFile" data-i18n="wallpaper.upload">Upload from PC</label>
+          <input type="file" id="setBackgroundFile" class="sr-only" accept="image/*">
+          <button type="button" id="resetBackgroundBtn" class="btn btn-small" data-i18n="settings.bgReset">Reset background</button>
+        </div>
+      </section>
+
+      <section class="wallpaper-section">
+        <h4 data-i18n="wallpaper.palette">Background colour</h4>
+        <p class="settings-sublabel" data-i18n="wallpaper.paletteHint">A flat fill instead of a wallpaper.</p>
+        <div id="backgroundPalette" class="color-palette"></div>
+        <label class="field field-color"><span data-i18n="wallpaper.customColor">Custom colour</span><input type="color" id="setBackgroundColor" value="#10151b"></label>
+      </section>
+
+      <section class="wallpaper-section">
+        <h4 data-i18n="wallpaper.rotation">Automatic rotation</h4>
+        <label class="field-inline"><input type="checkbox" id="setRotationEnabled"> <span data-i18n="wallpaper.rotationOn">Change wallpaper automatically</span></label>
+        <div class="field-row pair-row">
+          <label class="field"><span data-i18n="wallpaper.interval">Interval</span><input type="number" id="setRotationValue" min="1" max="999" step="1" value="30"></label>
+          <label class="field"><span data-i18n="wallpaper.unit">Unit</span><select id="setRotationUnit">
+            <option value="minutes" data-i18n="unit.minutes">Minutes</option>
+            <option value="hours" data-i18n="unit.hours">Hours</option>
+          </select></label>
+        </div>
+        <p id="rotationStatus" class="hint"></p>
+        <div class="wallpaper-actions">
+          <button type="button" id="rotationSelectAllBtn" class="btn btn-small" data-i18n="wallpaper.selectAll">Select all</button>
+          <button type="button" id="rotationClearBtn" class="btn btn-small" data-i18n="wallpaper.clearAll">Clear all</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-actions settings-footer">
+      <button type="button" id="wallpaperCloseBtn" class="btn btn-primary" data-i18n="common.done">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Monitoring: availability history for a single service (v32). Opened from the
+     card context menu; everything below #monitorBody is drawn by app.js from
+     GET /api/items/:id/history. -->
+<div id="monitorModal" class="modal-overlay" hidden>
+  <div class="modal modal-monitor">
+    <div class="modal-heading">
+      <div class="monitor-title">
+        <h3 id="monitorName">Monitoring</h3>
+        <p id="monitorMeta" class="monitor-meta"></p>
+      </div>
+      <button id="monitorXBtn" class="modal-close" type="button" data-i18n-title="common.close" title="Close">×</button>
+    </div>
+
+    <div class="monitor-toolbar">
+      <div id="monitorRanges" class="monitor-ranges" role="group" data-i18n-aria="monitor.period" aria-label="Period"></div>
+      <button type="button" id="monitorRecheckBtn" class="btn btn-small" data-i18n="monitor.recheck">Check now</button>
+    </div>
+
+    <div id="monitorBody" class="monitor-body"></div>
+
+    <div class="modal-actions settings-footer monitor-footer">
+      <p id="monitorNote" class="monitor-note"></p>
+      <button type="button" id="monitorCloseBtn" class="btn btn-primary" data-i18n="common.done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay" hidden>
+  <div class="modal modal-small">
+    <p id="confirmText">Delete item?</p>
+    <div class="modal-actions">
+      <button id="confirmCancelBtn" class="btn" data-i18n="common.cancel">Cancel</button>
+      <button id="confirmOkBtn" class="btn btn-danger" data-i18n="common.delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal-overlay" hidden>
+  <div class="modal modal-settings">
+    <div class="modal-heading"><h3 data-i18n="settings.title">Settings</h3><button id="settingsXBtn" class="modal-close" type="button" data-i18n-title="common.close" title="Close">×</button></div>
+
+    <div class="settings-body">
+      <div class="settings-col">
+        <fieldset class="settings-compact"><legend data-i18n="settings.appearance">Appearance</legend>
+          <div class="field-row pair-row">
+            <label class="field"><span data-i18n="settings.theme">Theme</span><select id="setTheme"><option value="light" data-i18n="theme.light">Light</option><option value="dark" data-i18n="theme.dark">Dark</option></select></label>
+            <label class="field"><span data-i18n="settings.font">Font</span><select id="setFont"></select></label>
+          </div>
+          <label class="field"><span data-i18n="settings.language">Language</span><select id="setLanguage"><option value="ru">Русский</option><option value="en">English</option></select></label>
+        </fieldset>
+
+        <!-- Background lives in its own dialog behind the wallpaper toolbar button
+             (v27), because the album, the palette and the rotation schedule need
+             far more room than a settings column can give them. -->
+
+        <!-- How much of the wallpaper shows through each group of frosted
+             surfaces. 100% is a fill-free surface: border and blur remain. -->
+        <!-- The ticks under each slider are built by app.js from the input's own
+             min/max, one every ten, and clicking one moves the handle there. -->
+        <fieldset class="settings-compact"><legend data-i18n="settings.opacity">Transparency</legend>
+          <div class="field range-field">
+            <label class="field-head" for="setBlockOpacity"><span data-i18n="settings.opacityBlocks">Blocks</span><output id="blockOpacityValue">90%</output></label>
+            <input type="range" id="setBlockOpacity" min="0" max="100" step="1" value="90">
+            <div class="range-ticks" data-ticks-for="setBlockOpacity"></div>
+          </div>
+          <div class="field range-field">
+            <label class="field-head" for="setWidgetOpacity"><span data-i18n="settings.opacityWidgets">Widgets</span><output id="widgetOpacityValue">60%</output></label>
+            <input type="range" id="setWidgetOpacity" min="0" max="100" step="1" value="60">
+            <div class="range-ticks" data-ticks-for="setWidgetOpacity"></div>
+          </div>
+          <div class="field range-field">
+            <label class="field-head" for="setSearchOpacity"><span data-i18n="settings.opacitySearch">Search bar</span><output id="searchOpacityValue">60%</output></label>
+            <input type="range" id="setSearchOpacity" min="0" max="100" step="1" value="60">
+            <div class="range-ticks" data-ticks-for="setSearchOpacity"></div>
+          </div>
+          <div class="field range-field">
+            <label class="field-head" for="setButtonOpacity"><span data-i18n="settings.opacityButtons">Buttons</span><output id="buttonOpacityValue">60%</output></label>
+            <input type="range" id="setButtonOpacity" min="0" max="100" step="1" value="60">
+            <div class="range-ticks" data-ticks-for="setButtonOpacity"></div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="settings-col">
+        <fieldset class="settings-compact"><legend data-i18n="settings.cards">Cards</legend>
+          <div class="field-row pair-row">
+            <label class="field"><span data-i18n="settings.cardSize">Size</span><select id="setCardSize"><option value="small" data-i18n="size.small">Small</option><option value="medium" data-i18n="size.medium">Medium</option><option value="large" data-i18n="size.large">Large</option></select></label>
+            <label class="field"><span data-i18n="settings.columns">Columns</span><select id="setColumns"><option value="auto" data-i18n="columns.auto">Auto</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+          </div>
+          <label class="field"><span data-i18n="settings.sort">Sorting</span><select id="setSortMode"><option value="custom" data-i18n="sort.custom">Custom order</option><option value="name" data-i18n="sort.name">By name</option><option value="category" data-i18n="sort.category">By category</option></select></label>
+          <label class="field"><span class="field-head"><span data-i18n="settings.cardsAreaWidth">Area width</span><output id="cardsAreaWidthValue">100%</output></span><input type="range" id="setCardsAreaWidth" min="60" max="100" step="1" value="100"></label>
+          <div class="icon-bg-row">
+            <label class="field-inline"><input type="checkbox" id="setCardIconBackground"> <span data-i18n="settings.cardIconBackground">Icon background</span></label>
+            <label class="field field-color"><span class="sr-only" data-i18n="settings.iconBg">Icon background color</span><input type="color" id="setIconBackgroundColor" value="#ffffff" data-i18n-title="settings.iconBg" title="Icon background color"></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-compact"><legend data-i18n="settings.categories">Categories</legend>
+          <!-- Blocks scale on their own axis: this select drives the whole block
+               (padding, rows, icons, type), not just its outer width. -->
+          <label class="field"><span data-i18n="settings.blockSize">Block size</span><select id="setBlockSize"><option value="small" data-i18n="size.small">Small</option><option value="medium" data-i18n="size.medium">Medium</option><option value="large" data-i18n="size.large">Large</option></select></label>
+          <div id="categoryManager" class="category-manager"></div>
+          <div class="field-row compact-row category-add-row"><input type="text" id="newCategoryName" data-i18n-ph="settings.newCategory.ph" placeholder="New category"><button id="addCategoryBtn" class="btn btn-small" type="button" data-i18n="common.add">Add</button></div>
+        </fieldset>
+
+        <fieldset class="settings-compact"><legend data-i18n="settings.widgets">Widgets</legend>
+          <div class="checks-grid">
+            <label class="field-inline"><input type="checkbox" id="setDateEnabled"> <span data-i18n="widget.date">Date</span></label>
+            <label class="field-inline"><input type="checkbox" id="setTimeEnabled"> <span data-i18n="widget.time">Time</span></label>
+            <label class="field-inline"><input type="checkbox" id="setWeatherEnabled"> <span data-i18n="widget.weather">Weather</span></label>
+            <label class="field-inline"><input type="checkbox" id="setPingEnabled"> <span data-i18n="widget.ping">Ping</span></label>
+            <label class="field-inline"><input type="checkbox" id="setStickyEnabled"> <span data-i18n="widget.sticky">Sticky Note</span></label>
+            <label class="field-inline"><input type="checkbox" id="setSpeedEnabled"> <span data-i18n="widget.speed">Network speed</span></label>
+          </div>
+          <div class="hint" data-i18n="hint.widgetRest">The remaining options live in the widget’s right-click menu.</div>
+        </fieldset>
+      </div>
+
+      <div class="settings-col">
+        <fieldset class="settings-compact"><legend data-i18n="settings.search">Search</legend>
+          <div class="field-row pair-row">
+            <label class="field"><span data-i18n="settings.searchEngine">Search engine</span><select id="setSearchEngine"></select></label>
+            <label class="field-inline pair-check"><input type="checkbox" id="setSearchEngineVisible"> <span data-i18n="settings.engineSwitcherShort">Switcher</span></label>
+          </div>
+          <div class="field-row compact-row"><label class="field"><span data-i18n="settings.width">Width</span><input type="number" id="setSearchWidth" min="280" max="1000"></label><label class="field"><span data-i18n="settings.height">Height</span><input type="number" id="setSearchHeight" min="38" max="90"></label></div>
+        </fieldset>
+
+        <!-- "Open" is a two-state setting, so it is a switch rather than a
+             two-option select: off is the current tab, on is a new one. The word
+             next to the track is rewritten by app.js on every flip, so the state
+             is readable without decoding which side the thumb sits on. -->
+        <fieldset class="settings-compact"><legend data-i18n="settings.links">Links</legend>
+          <div class="field-row pair-row">
+            <label class="field switch-field">
+              <span data-i18n="settings.openIn">Open</span>
+              <span class="switch">
+                <input type="checkbox" id="setLinkBehavior" role="switch">
+                <span class="switch-track" aria-hidden="true"></span>
+                <span class="switch-text" id="setLinkBehaviorText" data-i18n="link.newTabShort">New tab</span>
+              </span>
+            </label>
+            <label class="field-inline pair-check"><input type="checkbox" id="setConfirmExternal"> <span data-i18n="settings.confirmExternal">Confirm external</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-compact"><legend data-i18n="settings.data">Data</legend>
+          <div class="settings-sublabel" data-i18n="settings.backup">Backup</div>
+          <div class="settings-btn-row">
+            <button id="exportBtn" class="btn btn-small" type="button" data-i18n="common.export">Export</button>
+            <label class="btn btn-small file-btn"><span data-i18n="common.import">Import</span><input type="file" id="importFile" accept="application/json" hidden></label>
+          </div>
+          <div class="settings-sublabel" data-i18n="settings.resetDefaults">Reset to defaults</div>
+          <div class="settings-btn-row">
+            <button id="resetAppearanceBtn" class="btn btn-small" type="button" data-i18n="settings.resetAppearance">Appearance</button>
+            <button id="resetCardsBtn" class="btn btn-small" type="button" data-i18n="settings.resetCards">Cards</button>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+
+    <div class="modal-actions settings-footer"><button id="settingsCloseBtn" class="btn btn-primary" type="button" data-i18n="common.done">Done</button></div>
+  </div>
+</div>
+
+
+<!-- Sticky Note (v29): the one widget the user places freely. Two states live in
+     the same element — the collapsed button and the expanded panel — so a drag
+     in either state moves the same node. The lines are written by app.js. -->
+<div id="stickyNote" class="sticky-note" data-state="expanded" hidden>
+  <button type="button" id="stickyExpandBtn" class="sticky-collapsed" data-i18n-title="sticky.expand" data-i18n-aria="sticky.expand" title="Expand Sticky Note" aria-label="Expand Sticky Note">
+    <img class="sticky-glyph" src="/icons/sticky.svg" alt="">
+  </button>
+  <div class="sticky-panel">
+    <div class="sticky-head" id="stickyHead">
+      <img class="sticky-glyph sticky-glyph-sm" src="/icons/sticky.svg" alt="">
+      <span class="sticky-title">Sticky Note</span>
+      <button type="button" id="stickyCollapseBtn" class="sticky-btn" data-i18n-title="sticky.collapse" data-i18n-aria="sticky.collapse" title="Collapse" aria-label="Collapse">–</button>
+    </div>
+    <div class="sticky-tools">
+      <button type="button" class="sticky-tool" data-format="bold" data-i18n-title="sticky.bold" data-i18n-aria="sticky.bold" title="Bold" aria-label="Bold"><b>B</b></button>
+      <button type="button" class="sticky-tool" data-format="italic" data-i18n-title="sticky.italic" data-i18n-aria="sticky.italic" title="Italic" aria-label="Italic"><i>I</i></button>
+      <button type="button" class="sticky-tool" data-format="underline" data-i18n-title="sticky.underline" data-i18n-aria="sticky.underline" title="Underline" aria-label="Underline"><u>U</u></button>
+      <span class="sticky-tool-sep"></span>
+      <button type="button" class="sticky-tool" data-line-type="todo" data-i18n-title="sticky.asTodo" data-i18n-aria="sticky.asTodo" title="Checkbox item" aria-label="Checkbox item">✓</button>
+      <button type="button" class="sticky-tool" data-line-type="bullet" data-i18n-title="sticky.asBullet" data-i18n-aria="sticky.asBullet" title="Bullet item" aria-label="Bullet item">•</button>
+      <button type="button" class="sticky-tool" data-line-type="text" data-i18n-title="sticky.asText" data-i18n-aria="sticky.asText" title="Plain text" aria-label="Plain text">T</button>
+    </div>
+    <div class="sticky-lines" id="stickyLines"></div>
+    <button type="button" id="stickyAddBtn" class="sticky-add" data-i18n="sticky.addLine">+ Item</button>
+  </div>
+</div>
+
+<!-- Network speed (v30): the Sticky Note's two-state shell — one node that is
+     either a round button or a panel — pinned to the bottom-left corner. The
+     measurement itself runs on the backend (/api/speedtest), because a browser
+     cannot reach a third-party test server without its CORS blessing. -->
+<div id="speedWidget" class="speed-widget" data-state="collapsed" hidden>
+  <button type="button" id="speedExpandBtn" class="speed-collapsed" data-i18n-title="speed.expand" data-i18n-aria="speed.expand" title="Network speed" aria-label="Network speed">
+    <img class="speed-glyph" src="/icons/speed.svg" alt="">
+  </button>
+  <div class="speed-panel">
+    <div class="speed-head">
+      <img class="speed-glyph speed-glyph-sm" src="/icons/speed.svg" alt="">
+      <span class="speed-title" data-i18n="widget.speed">Network speed</span>
+      <button type="button" id="speedCollapseBtn" class="speed-btn" data-i18n-title="speed.collapse" data-i18n-aria="speed.collapse" title="Collapse" aria-label="Collapse">–</button>
+    </div>
+    <label class="speed-field"><span data-i18n="speed.server">Server</span><select id="speedServer"></select></label>
+    <button type="button" id="speedRunBtn" class="speed-run" data-i18n="speed.run">Check</button>
+    <div class="speed-results">
+      <div class="speed-result"><span class="speed-result-label" data-i18n="speed.download">Download</span><span class="speed-result-value" id="speedDownload">—</span></div>
+      <div class="speed-result"><span class="speed-result-label" data-i18n="speed.upload">Upload</span><span class="speed-result-value" id="speedUpload">—</span></div>
+      <div class="speed-result"><span class="speed-result-label" data-i18n="speed.latency">Latency</span><span class="speed-result-value" id="speedLatency">—</span></div>
+    </div>
+    <div class="speed-status" id="speedStatus" data-i18n="speed.idle">No measurement yet</div>
+    <div class="speed-hint" data-i18n="speed.hint">Measured over the HemmaHub server’s connection</div>
+  </div>
+</div>
+
+<div id="contextMenu" class="context-menu" hidden>
+  <button data-action="edit" data-i18n="menu.edit">Edit</button>
+  <button data-action="monitor" data-i18n="menu.monitoring">Monitoring</button>
+  <button data-action="favorite" data-i18n="menu.favoriteToggle">Toggle favorite</button>
+  <button data-action="recheck" data-i18n="menu.recheck">Check availability</button>
+  <button data-action="delete" class="danger" data-i18n="common.delete">Delete</button>
+</div>
+
+<div id="widgetContextMenu" class="context-menu" hidden>
+  <button data-action="edit" data-i18n="menu.edit">Edit</button>
+  <button data-action="delete" class="danger" data-i18n="common.delete">Delete</button>
+</div>
+
+<div id="widgetPopover" class="widget-popover" hidden>
+  <div class="widget-popover-head"><span id="widgetPopoverTitle"></span><button id="widgetPopoverClose" class="modal-close" type="button" data-i18n-title="common.close" title="Close">×</button></div>
+  <div id="widgetPopoverBody" class="widget-popover-body"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
