@@ -1,4 +1,4 @@
-# Home Portal
+# Hemma
 
 A self-hosted personal home dashboard for managing local services, bookmarks, and service availability from a single browser page.
 
