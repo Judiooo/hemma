@@ -1,5 +1,5 @@
 {
-  "name": "home-portal",
+  "name": "hemma",
   "version": "1.1.0",
   "description": "Personal home portal - start page for local services and bookmarks",
   "main": "server.js",
