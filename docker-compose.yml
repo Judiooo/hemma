@@ -1,7 +1,7 @@
 services:
   portal:
     build: ./app
-    container_name: home-portal
+    container_name: hemma
     restart: unless-stopped
     ports:
       - "8000:3000"
