@@ -11,7 +11,7 @@ Home Portal is designed primarily for trusted local networks and can be deployed
 - Favorites section
 - Drag-and-drop card sorting
 - Local search plus external search engine selection
-- Light, dark, and system themes
+- Light and dark themes
 - Custom wallpapers, uploaded backgrounds, and background history
 - Date, time, and weather widgets
 - Weather via Open-Meteo — no API key required
