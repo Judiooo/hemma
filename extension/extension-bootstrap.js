@@ -14,7 +14,14 @@ window.fetch = async (input, init = {}) => {
     const { path, query } = pathParts(requestUrl);
     const method = String(init.method || (typeof input !== "string" ? input.method : "GET")).toUpperCase();
     const body = await bodyJson(init);
-    if (path === "items" && method === "GET") return json((await loadState()).items);
+    if (path === "items" && method === "GET") {
+      const state = await loadState();
+      // The original UI renders the status badge from item.health.status.
+      // The self-hosted API includes health in the item list, so the extension
+      // must do the same. This also makes the existing 15s health refresh work.
+      const items = state.items.map((item) => ({ ...item, health: state.health[String(item.id)] || state.health[item.id] || { status: "unknown" } }));
+      return json(items);
+    }
     if (path.startsWith("items/") && path.endsWith("/history") && method === "GET") {
       const id = path.split("/")[1], state = await loadState();
       const item = state.items.find((x) => String(x.id) === String(id));
@@ -26,12 +33,12 @@ window.fetch = async (input, init = {}) => {
       const id = path.split("/")[1];
       const response = await chrome.runtime.sendMessage({ type: "run-health" });
       const state = await loadState();
-      return json(response?.statuses?.[id] || state.health[id] || { status: "unknown" });
+      return json(response?.statuses?.[id] || response?.statuses?.[String(id)] || state.health[id] || state.health[String(id)] || { status: "unknown" });
     }
     if (path.startsWith("items/") && method === "GET") {
       const id = path.split("/")[1], state = await loadState();
       const item = state.items.find((x) => String(x.id) === String(id));
-      return item ? json({ ...item, health: state.health[id] || { status: "unknown" } }) : json({ error: "Item not found" }, 404);
+      return item ? json({ ...item, health: state.health[String(id)] || state.health[id] || { status: "unknown" } }) : json({ error: "Item not found" }, 404);
     }
     if (path === "items" && method === "POST") return json(await addItem(body), 201);
     if (path.startsWith("items/") && method === "PUT") return json(await updateItem(path.split("/")[1], body));
