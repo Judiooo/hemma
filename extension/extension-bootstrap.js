@@ -47,7 +47,11 @@ window.fetch = async (input, init = {}) => {
     if (path === "backup/export" && method === "GET") return json(JSON.parse(await exportBackup()));
     if (path === "backup/import" && method === "POST") { await importBackup(body); return json({ ok: true, imported: { categories: body.categories.length, items: body.items.length } }); }
     if (path === "backgrounds/builtin" && method === "GET") return json({ wallpapers: [] });
-    if (path === "backgrounds" && method === "POST") { const blob = new Blob([init.body], { type: "image/jpeg" }); return json({ url: await blobToDataUrl(blob) }); }
+    if (path === "backgrounds" && method === "POST") {
+      const blob = await requestBodyToBlob(init.body, init.headers);
+      if (!blob || !blob.size) return json({ error: "Пустой файл" }, 400);
+      return json({ url: await blobToDataUrl(blob) });
+    }
     if (path.startsWith("backgrounds/") && method === "GET") return new Response("", { status: 404 });
     if (path === "favicon" && method === "GET") { try { const site = new URL(query.get("url")); return json({ url: `${site.origin}/favicon.ico` }); } catch (_) { return json({ url: "" }, 400); } }
     if (path === "speedtest" && method === "POST") return json({ error: "Network speed test is unavailable in pure extension mode" }, 501);
@@ -58,5 +62,47 @@ window.fetch = async (input, init = {}) => {
 };
 
 chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && (changes.health || changes.healthHistory)) window.dispatchEvent(new CustomEvent("hemma-health-updated")); });
+
+async function requestBodyToBlob(body, headers) {
+  if (body instanceof Blob) return body;
+  if (body instanceof ArrayBuffer) return new Blob([body], { type: headerContentType(headers) || "application/octet-stream" });
+  if (ArrayBuffer.isView(body)) return new Blob([body], { type: headerContentType(headers) || "application/octet-stream" });
+  if (body instanceof ReadableStream) return new Blob([await new Response(body).arrayBuffer()], { type: headerContentType(headers) || "application/octet-stream" });
+  if (typeof body === "string") return new Blob([body], { type: headerContentType(headers) || "application/octet-stream" });
+  return null;
+}
+function headerContentType(headers) { if (!headers) return ""; if (headers instanceof Headers) return headers.get("content-type") || ""; if (typeof headers.get === "function") return headers.get("content-type") || ""; return headers["Content-Type"] || headers["content-type"] || ""; }
 function blobToDataUrl(blob) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); }
+
 await import("./app.js");
+installPureExtensionWallpaperHandler();
+
+function installPureExtensionWallpaperHandler() {
+  const input = document.getElementById("setBackgroundFile");
+  if (!input) return;
+  input.addEventListener("change", async (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await blobToDataUrl(file);
+      await saveSettings({ background: dataUrl, background_history: JSON.stringify([dataUrl]) });
+      applyExtensionWallpaper(dataUrl);
+      const status = document.getElementById("backgroundStatus");
+      if (status) status.textContent = "Фон установлен";
+      window.dispatchEvent(new CustomEvent("hemma-background-updated", { detail: { url: dataUrl } }));
+    } catch (error) {
+      const status = document.getElementById("backgroundStatus");
+      if (status) status.textContent = `Не удалось установить фон: ${error?.message || error}`;
+      console.error("Hemma wallpaper upload failed", error);
+    } finally {
+      input.value = "";
+    }
+  }, true);
+}
+
+export function applyExtensionWallpaper(url) {
+  if (!url) return;
+  document.documentElement.style.setProperty("--bg-image", `url("${url}")`);
+}
