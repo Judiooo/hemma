@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -23,7 +23,6 @@ await fs.writeFile(appJsPath, appJs);
 await fs.copyFile(path.join(here, "manifest.json"), path.join(dist, "manifest.json"));
 await fs.copyFile(path.join(here, "service-worker.js"), path.join(dist, "service-worker.js"));
 await fs.copyFile(path.join(here, "storage.js"), path.join(dist, "storage.js"));
-await fs.copyFile(path.join(here, "history.js"), path.join(dist, "history.js"));
 await fs.copyFile(path.join(here, "extension-bootstrap.js"), path.join(dist, "extension-bootstrap.js"));
 
 console.log(`Hemma extension built at ${dist}`);
