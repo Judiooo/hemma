@@ -13,6 +13,10 @@ await fs.cp(source, dist, { recursive: true });
 const indexPath = path.join(dist, "index.html");
 let html = await fs.readFile(indexPath, "utf8");
 html = html.replace(/href="\/([^"]+)"/g, 'href="$1"').replace(/src="\/([^"]+)"/g, 'src="$1"').replace('<script src="app.js"></script>', '<script type="module" src="extension-bootstrap.js"></script>');
+html = html.replace('</head>', `<style id="hemma-extension-disabled-widgets">
+#pingDock, #speedWidget { display: none !important; }
+label:has(#setPingEnabled), label:has(#setSpeedEnabled) { display: none !important; }
+</style>\n</head>`);
 await fs.writeFile(indexPath, html);
 
 const appJsPath = path.join(dist, "app.js");
