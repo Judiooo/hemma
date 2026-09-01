@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Hemma",
+  "version": "1.0.0",
+  "description": "Hemma personal dashboard as a pure Chrome New Tab extension.",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "action": {
+    "default_title": "Hemma"
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
