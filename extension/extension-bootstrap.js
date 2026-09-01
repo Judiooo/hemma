@@ -1,11 +1,11 @@
 import { loadState, saveSettings, addItem, updateItem, deleteItem, addCategory, updateCategory, deleteCategory, reorderItems, exportBackup, importBackup, resetSettings } from "./storage.js";
-import { buildHistory } from "./history.js";
 
 const nativeFetch = window.fetch.bind(window);
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } }); }
 function noContent() { return new Response(null, { status: 204 }); }
 function pathParts(input) { const url = new URL(input, location.href); return { url, path: url.pathname.replace(/^\/api\//, "").replace(/\/$/, ""), query: url.searchParams }; }
 async function bodyJson(init) { if (!init?.body) return {}; if (typeof init.body === "string") return JSON.parse(init.body || "{}"); return {}; }
+function blobToDataUrl(blob) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); }
 
 window.fetch = async (input, init = {}) => {
   const requestUrl = typeof input === "string" ? input : input.url;
@@ -46,10 +46,13 @@ window.fetch = async (input, init = {}) => {
     if (path.startsWith("settings/reset/") && method === "POST") return json(await resetSettings(path.split("/")[2]));
     if (path === "backup/export" && method === "GET") return json(JSON.parse(await exportBackup()));
     if (path === "backup/import" && method === "POST") { await importBackup(body); return json({ ok: true, imported: { categories: body.categories.length, items: body.items.length } }); }
-    if (path === "backgrounds/builtin" && method === "GET") return json({ wallpapers: [] });
+    if (path === "backgrounds/builtin" && method === "GET") {
+      const files = ["Azure Flow.jpg"];
+      return json({ wallpapers: files.map((name) => ({ url: `wallpaper/${encodeURIComponent(name)}`, name: name.replace(/\.[^.]+$/, "") })) });
+    }
     if (path === "backgrounds" && method === "POST") {
-      const blob = await requestBodyToBlob(init.body, init.headers);
-      if (!blob || !blob.size) return json({ error: "Пустой файл" }, 400);
+      const blob = init.body instanceof Blob ? init.body : new Blob([init.body], { type: init.headers instanceof Headers ? init.headers.get("content-type") || "image/jpeg" : "image/jpeg" });
+      if (!blob.size) return json({ error: "Пустой файл" }, 400);
       return json({ url: await blobToDataUrl(blob) });
     }
     if (path.startsWith("backgrounds/") && method === "GET") return new Response("", { status: 404 });
@@ -63,46 +66,49 @@ window.fetch = async (input, init = {}) => {
 
 chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && (changes.health || changes.healthHistory)) window.dispatchEvent(new CustomEvent("hemma-health-updated")); });
 
-async function requestBodyToBlob(body, headers) {
-  if (body instanceof Blob) return body;
-  if (body instanceof ArrayBuffer) return new Blob([body], { type: headerContentType(headers) || "application/octet-stream" });
-  if (ArrayBuffer.isView(body)) return new Blob([body], { type: headerContentType(headers) || "application/octet-stream" });
-  if (body instanceof ReadableStream) return new Blob([await new Response(body).arrayBuffer()], { type: headerContentType(headers) || "application/octet-stream" });
-  if (typeof body === "string") return new Blob([body], { type: headerContentType(headers) || "application/octet-stream" });
-  return null;
+function buildHistory(item, samples, range, settings) {
+  const now = Date.now();
+  const rangeMs = ({ "1h": 3600000, "6h": 21600000, "1d": 86400000, "7d": 604800000, "30d": 2592000000 })[range] || 86400000;
+  const from = now - rangeMs;
+  const points = (Array.isArray(samples) ? samples : []).map((x) => ({ ...x, ts: typeof x.checked_at === "number" ? x.checked_at : Date.parse(x.checked_at) })).filter((x) => Number.isFinite(x.ts) && x.ts >= from && x.ts <= now).sort((a,b) => a.ts - b.ts);
+  const measured = points.filter((x) => x.ok && x.latency_ms != null).map((x) => Number(x.latency_ms)).filter(Number.isFinite);
+  const online = points.filter((x) => x.ok).length;
+  const last = points.at(-1) || null;
+  const avg = measured.length ? Math.round(measured.reduce((a,b) => a+b, 0) / measured.length) : null;
+  const min = measured.length ? Math.min(...measured) : null;
+  const max = measured.length ? Math.max(...measured) : null;
+  const incidents = [];
+  let incident = null;
+  for (const p of points) {
+    if (!p.ok && !incident) incident = { started_at: p.ts, ended_at: null, reason: p.error || (p.http_status ? `http_${p.http_status}` : "unreachable") };
+    if (p.ok && incident) { incident.ended_at = p.ts; incidents.push(incident); incident = null; }
+  }
+  if (incident) incidents.push(incident);
+  const bucketCount = range === "1h" ? 60 : range === "6h" ? 72 : range === "7d" ? 168 : range === "30d" ? 180 : 144;
+  const bucketMs = Math.ceil(rangeMs / bucketCount);
+  const buckets = Array.from({ length: bucketCount }, (_, i) => {
+    const start = from + i * bucketMs, end = i === bucketCount - 1 ? now + 1 : start + bucketMs;
+    const rows = points.filter((p) => p.ts >= start && p.ts < end);
+    const up = rows.filter((p) => p.ok).length;
+    const lat = rows.filter((p) => p.ok && p.latency_ms != null).map((p) => Number(p.latency_ms)).filter(Number.isFinite);
+    return { t: start, up, samples: rows.length, avg: lat.length ? lat.reduce((a,b) => a+b, 0) / lat.length : null, min: lat.length ? Math.min(...lat) : null, max: lat.length ? Math.max(...lat) : null };
+  });
+  return {
+    item: { id: item.id, name: item.name, url: item.url, type: item.type, method: "http", health_check_enabled: item.health_check_enabled },
+    checks_enabled: settings.healthcheck_enabled !== "false",
+    range, from, to: now, bucket_ms: bucketMs, interval_s: Number(settings.healthcheck_interval) || 60, retention_days: 30,
+    summary: {
+      status: last ? (last.ok ? "online" : "offline") : "offline",
+      uptime: points.length ? Math.round((online / points.length) * 10000) / 100 : null,
+      samples: points.length,
+      latency: { avg, min, max, last: last?.ok && last.latency_ms != null ? Number(last.latency_ms) : null },
+      outages: incidents.length,
+      longest_outage_ms: incidents.length ? Math.max(...incidents.map((x) => x.ended_at ? x.ended_at - x.started_at : now - x.started_at)) : 0,
+      downtime_ms: incidents.reduce((sum, x) => sum + (x.ended_at ? x.ended_at - x.started_at : now - x.started_at), 0),
+      last_at: last?.ts ?? null
+    },
+    buckets, incidents, incidents_total: incidents.length
+  };
 }
-function headerContentType(headers) { if (!headers) return ""; if (headers instanceof Headers) return headers.get("content-type") || ""; if (typeof headers.get === "function") return headers.get("content-type") || ""; return headers["Content-Type"] || headers["content-type"] || ""; }
-function blobToDataUrl(blob) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); }
 
 await import("./app.js");
-installPureExtensionWallpaperHandler();
-
-function installPureExtensionWallpaperHandler() {
-  const input = document.getElementById("setBackgroundFile");
-  if (!input) return;
-  input.addEventListener("change", async (event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const file = input.files?.[0];
-    if (!file) return;
-    try {
-      const dataUrl = await blobToDataUrl(file);
-      await saveSettings({ background: dataUrl, background_history: JSON.stringify([dataUrl]) });
-      applyExtensionWallpaper(dataUrl);
-      const status = document.getElementById("backgroundStatus");
-      if (status) status.textContent = "Фон установлен";
-      window.dispatchEvent(new CustomEvent("hemma-background-updated", { detail: { url: dataUrl } }));
-    } catch (error) {
-      const status = document.getElementById("backgroundStatus");
-      if (status) status.textContent = `Не удалось установить фон: ${error?.message || error}`;
-      console.error("Hemma wallpaper upload failed", error);
-    } finally {
-      input.value = "";
-    }
-  }, true);
-}
-
-export function applyExtensionWallpaper(url) {
-  if (!url) return;
-  document.documentElement.style.setProperty("--bg-image", `url("${url}")`);
-}
